@@ -1,0 +1,24 @@
+[
+  {
+    "url": "https://accounts-verify-login.com/secure/bank/upi-paytm",
+    "model_prediction": "phishing",
+    "confidence": 0.92,
+    "user_reports": [],
+    "status": "pending",
+    "prediction_count": 2,
+    "created_at": "2026-01-19T14:41:08.772070",
+    "last_predicted": "2026-01-19T14:43:36.069446",
+    "user_ip": "127.0.0.1"
+  },
+  {
+    "url": "http://bit.ly/urgent-action-required",
+    "model_prediction": "safe",
+    "confidence": 0.05,
+    "user_reports": [],
+    "status": "pending",
+    "prediction_count": 2,
+    "created_at": "2026-01-19T19:52:55.249565",
+    "last_predicted": "2026-01-19T19:53:18.668079",
+    "user_ip": "127.0.0.1"
+  }
+]

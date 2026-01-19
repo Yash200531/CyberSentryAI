@@ -1,0 +1,57 @@
+[
+  {
+    "text": "congratulations! you've won $5,000 in our monthly lottery! reply with your bank details to claim your prize within 24 hours or it will expire.",
+    "model_prediction": "scam",
+    "confidence": 0.9999862560879584,
+    "user_reports": [],
+    "status": "pending",
+    "prediction_count": 8,
+    "created_at": "2026-01-19T14:40:56.813663",
+    "last_predicted": "2026-01-19T19:53:20.697842",
+    "user_ip": "127.0.0.1"
+  },
+  {
+    "text": "your package delivery failed. pay ₹50 redelivery fee here: bit.ly/pkg-delivery. your order #12345 will be returned if not claimed today!",
+    "model_prediction": "scam",
+    "confidence": 0.9847135333118672,
+    "user_reports": [],
+    "status": "pending",
+    "prediction_count": 12,
+    "created_at": "2026-01-19T14:41:01.969920",
+    "last_predicted": "2026-01-19T19:53:10.895653",
+    "user_ip": "127.0.0.1"
+  },
+  {
+    "text": "urgent! your bank account has been compromised. click here immediately to verify your identity and prevent account closure: http://secure-bank-verify.com/login",
+    "model_prediction": "scam",
+    "confidence": 0.999451304916198,
+    "user_reports": [],
+    "status": "pending",
+    "prediction_count": 3,
+    "created_at": "2026-01-19T14:43:29.108781",
+    "last_predicted": "2026-01-19T19:53:13.155343",
+    "user_ip": "127.0.0.1"
+  },
+  {
+    "text": "hi john, just wanted to confirm our meeting tomorrow at 3 pm at the coffee shop. let me know if you're still available. thanks!",
+    "model_prediction": "safe",
+    "confidence": 0.0032099958026628114,
+    "user_reports": [],
+    "status": "pending",
+    "prediction_count": 1,
+    "created_at": "2026-01-19T14:43:38.621247",
+    "last_predicted": "2026-01-19T14:43:38.621247",
+    "user_ip": "127.0.0.1"
+  },
+  {
+    "text": "ugh9uguig9",
+    "model_prediction": "safe",
+    "confidence": 0.03780605616741722,
+    "user_reports": [],
+    "status": "pending",
+    "prediction_count": 1,
+    "created_at": "2026-01-19T19:53:03.468696",
+    "last_predicted": "2026-01-19T19:53:03.468696",
+    "user_ip": "127.0.0.1"
+  }
+]

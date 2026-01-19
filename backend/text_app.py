@@ -1,9 +1,13 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import pickle
+from feedback_db import FeedbackDB
 
 app = Flask(__name__)
 CORS(app)
+
+# Initialize feedback database
+feedback_db = FeedbackDB()
 
 # Load model
 with open("models/text_scam_model.pkl", "rb") as f:
@@ -13,6 +17,7 @@ with open("models/text_scam_model.pkl", "rb") as f:
 def detect_text():
     data = request.json
     text = data.get("text", "").lower()
+    user_ip = request.remote_addr
 
     vec = vectorizer.transform([text])
     prob = model.predict_proba(vec)[0][1]
@@ -60,6 +65,9 @@ def detect_text():
         explanations.append("No suspicious scam patterns detected")
         explanations.append("Message appears to be legitimate communication")
 
+    # Store prediction in feedback database for adaptive learning
+    feedback_db.add_text_prediction(text, pred, float(prob), user_ip)
+
     return jsonify({
         "text": text,
         "is_scam": bool(pred),
@@ -68,6 +76,38 @@ def detect_text():
         "explanation": explanations,
         "note": "Analyzed using Naive Bayes ML model trained on spam dataset"
     })
+
+@app.route("/report-text", methods=["POST"])
+def report_text():
+    """Endpoint for users to report/flag text as safe or scam"""
+    data = request.json
+    text = data.get("text", "").lower()
+    user_label = data.get("label", "").lower()  # 'safe' or 'scam'
+    comment = data.get("comment", "")
+    user_ip = request.remote_addr
+    
+    # Validate input
+    if not text:
+        return jsonify({"error": "Text is required"}), 400
+    
+    if user_label not in ['safe', 'scam']:
+        return jsonify({"error": "Label must be 'safe' or 'scam'"}), 400
+    
+    # Add report to database
+    feedback_db.add_text_report(text, user_label, user_ip, comment)
+    
+    return jsonify({
+        "success": True,
+        "message": "Thank you for your feedback! Your report helps improve our model.",
+        "text": text,
+        "reported_as": user_label
+    })
+
+@app.route("/feedback-stats", methods=["GET"])
+def feedback_stats():
+    """Get statistics about feedback data"""
+    stats = feedback_db.get_stats()
+    return jsonify(stats)
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
