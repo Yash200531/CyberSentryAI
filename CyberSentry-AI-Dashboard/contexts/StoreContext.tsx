@@ -7,6 +7,7 @@ interface StoreContextProps extends AppState {
   toggleTheme: () => void;
   addHistoryItem: (item: AnalysisResult) => void;
   clearHistory: () => void;
+  updateUser: (updates: Partial<User>) => void;
 }
 
 const StoreContext = createContext<StoreContextProps | undefined>(undefined);
@@ -69,6 +70,11 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setUser(null);
   };
 
+  const updateUser = (updates: Partial<User>) => {
+    if (!user) return;
+    setUser(prev => prev ? { ...prev, ...updates } : null);
+  };
+
   const addHistoryItem = (item: AnalysisResult) => {
     setHistory(prev => [item, ...prev]);
   };
@@ -86,7 +92,8 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       logout,
       toggleTheme,
       addHistoryItem,
-      clearHistory
+      clearHistory,
+      updateUser
     }}>
       {children}
     </StoreContext.Provider>
