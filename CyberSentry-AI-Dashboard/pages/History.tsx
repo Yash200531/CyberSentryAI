@@ -1,10 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useStore } from '../contexts/StoreContext';
 import { Verdict } from '../types';
-import { Trash2, ExternalLink, MessageSquare, Clock } from 'lucide-react';
+import { Trash2, ExternalLink, MessageSquare, Clock, Search, Filter } from 'lucide-react';
 
 export const HistoryPage: React.FC = () => {
   const { history, clearHistory } = useStore();
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filter logic
+  const filteredHistory = history.filter(item => 
+    item.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.verdict.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.reasoning.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleString();
@@ -27,20 +36,35 @@ export const HistoryPage: React.FC = () => {
 
   return (
     <div className="space-y-6 page-animate">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Scan History</h2>
           <p className="text-gray-500 dark:text-gray-400">Archive of your past analyses</p>
         </div>
-        {history.length > 0 && (
-          <button 
-            onClick={clearHistory}
-            className="flex items-center space-x-2 text-red-500 hover:text-red-600 dark:hover:text-red-400 transition-colors px-4 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10"
-          >
-            <Trash2 size={18} />
-            <span>Clear Logs</span>
-          </button>
-        )}
+        
+        {/* Search and Actions */}
+        <div className="w-full md:w-auto flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1 sm:min-w-[250px]">
+             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={16} />
+             <input
+                 type="text"
+                 placeholder="Search content, verdict, type..."
+                 value={searchQuery}
+                 onChange={(e) => setSearchQuery(e.target.value)}
+                 className="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-gray-200 dark:border-cyber-700 bg-white dark:bg-cyber-900 focus:ring-1 focus:ring-cyber-accent focus:border-cyber-accent outline-none text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 transition-all"
+             />
+          </div>
+
+          {history.length > 0 && (
+            <button 
+              onClick={clearHistory}
+              className="flex items-center justify-center space-x-2 text-red-500 hover:text-red-600 dark:hover:text-red-400 transition-colors px-4 py-2 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-900/10 dark:hover:bg-red-900/20 whitespace-nowrap"
+            >
+              <Trash2 size={16} />
+              <span className="text-sm font-medium">Clear Logs</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {history.length === 0 ? (
@@ -51,6 +75,12 @@ export const HistoryPage: React.FC = () => {
         </div>
       ) : (
         <div className="bg-white dark:bg-cyber-800 rounded-xl shadow-sm border border-gray-200 dark:border-cyber-700 overflow-hidden">
+          {filteredHistory.length === 0 ? (
+             <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+                <Filter size={32} className="mx-auto mb-2 opacity-50"/>
+                <p>No results found for "{searchQuery}"</p>
+             </div>
+          ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead className="bg-gray-50 dark:bg-cyber-900 border-b border-gray-200 dark:border-cyber-700">
@@ -62,7 +92,7 @@ export const HistoryPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-cyber-700">
-                {history.map((item) => (
+                {filteredHistory.map((item) => (
                   <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-cyber-700/50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getVerdictBadge(item.verdict)}
@@ -99,6 +129,7 @@ export const HistoryPage: React.FC = () => {
               </tbody>
             </table>
           </div>
+          )}
         </div>
       )}
     </div>

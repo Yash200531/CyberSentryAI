@@ -39,12 +39,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       {/* Sidebar - Desktop */}
       <aside className="hidden md:flex flex-col w-64 border-r border-gray-200 dark:border-cyber-800 bg-white dark:bg-cyber-900/80 backdrop-blur-xl fixed h-full z-20">
         <div className="p-6 border-b border-gray-200 dark:border-cyber-800">
-          <div className="flex items-center space-x-2 text-cyber-accent">
-            <ShieldCheck size={32} className="drop-shadow-[0_0_8px_rgba(0,242,234,0.5)]" />
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-              Cyber<span className="text-cyber-accent">Sentry</span>
+          <Link to="/" className="flex items-center space-x-2 text-cyber-accent group">
+            <ShieldCheck size={32} className="drop-shadow-[0_0_8px_rgba(0,242,234,0.5)] group-hover:scale-110 transition-transform duration-300" />
+            <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white group-hover:text-cyber-accent transition-colors">
+              Cyber<span className="text-cyber-accent group-hover:text-white transition-colors">Sentry</span>
             </h1>
-          </div>
+          </Link>
         </div>
 
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
@@ -84,10 +84,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
       {/* Mobile Header */}
       <div className="md:hidden fixed w-full z-30 bg-white dark:bg-cyber-900 border-b border-gray-200 dark:border-cyber-800 px-4 py-3 flex justify-between items-center">
-         <div className="flex items-center space-x-2 text-cyber-accent">
+         <Link to="/" className="flex items-center space-x-2 text-cyber-accent">
             <ShieldCheck size={24} />
             <span className="font-bold text-lg text-gray-900 dark:text-white">CyberSentry</span>
-         </div>
+         </Link>
          <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2">
             {isMobileMenuOpen ? <X /> : <Menu />}
          </button>
