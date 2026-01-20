@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useStore } from '../contexts/StoreContext';
 import { User, Shield, Lock, Zap, Edit2, Save, X, Camera, Activity, Cpu, Wifi } from 'lucide-react';
 
@@ -6,6 +6,7 @@ export const Profile: React.FC = () => {
   const { user, history, updateUser } = useStore();
   const [isEditing, setIsEditing] = useState(false);
   const [tempUsername, setTempUsername] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Calculate statistics
   const totalScans = history.length;
@@ -30,6 +31,22 @@ export const Profile: React.FC = () => {
 
   const handleCancel = () => {
     setIsEditing(false);
+  };
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        updateUser({ avatarUrl: result });
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   return (
@@ -108,16 +125,26 @@ export const Profile: React.FC = () => {
            <div className="flex flex-col md:flex-row items-end md:items-end gap-6">
               
               {/* Avatar Section */}
-              <div className="relative group/avatar">
+              <div className="relative group/avatar cursor-pointer" onClick={handleAvatarClick}>
                 <div className="absolute -inset-1 bg-gradient-to-br from-cyber-accent to-purple-600 rounded-full blur opacity-50 group-hover/avatar:opacity-100 transition duration-500"></div>
                 <img 
                   src={user.avatarUrl} 
                   alt="Profile" 
                   className="relative w-36 h-36 md:w-40 md:h-40 rounded-full border-4 border-white dark:border-cyber-950 bg-white dark:bg-cyber-900 shadow-xl object-cover"
                 />
-                <button className="absolute bottom-2 right-2 p-2 bg-gray-900 text-white rounded-full border border-gray-700 opacity-0 group-hover/avatar:opacity-100 transition-all hover:bg-cyber-accent hover:text-black hover:scale-110">
+                <button 
+                  onClick={(e) => { e.stopPropagation(); handleAvatarClick(); }}
+                  className="absolute bottom-2 right-2 p-2 bg-gray-900 text-white rounded-full border border-gray-700 opacity-0 group-hover/avatar:opacity-100 transition-all hover:bg-cyber-accent hover:text-black hover:scale-110 z-10"
+                >
                    <Camera size={16} />
                 </button>
+                <input 
+                   type="file" 
+                   ref={fileInputRef} 
+                   onChange={handleFileChange} 
+                   accept="image/*" 
+                   className="hidden" 
+                />
               </div>
 
               {/* User Info & Actions */}
