@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../contexts/StoreContext';
-import { User, Shield, Lock, Zap, Edit2, Save, X, Camera } from 'lucide-react';
+import { User, Shield, Lock, Zap, Edit2, Save, X, Camera, Activity, Cpu, Wifi } from 'lucide-react';
 
 export const Profile: React.FC = () => {
   const { user, history, updateUser } = useStore();
@@ -35,13 +35,72 @@ export const Profile: React.FC = () => {
   return (
     <div className="space-y-8 page-animate max-w-5xl mx-auto pb-12">
       <div className="relative group">
-        {/* Banner */}
-        <div className="h-64 bg-gradient-to-br from-cyber-950 via-cyber-900 to-cyber-800 rounded-3xl overflow-hidden relative shadow-2xl border border-cyber-800">
-           <div className="absolute inset-0 cyber-grid opacity-40 mix-blend-overlay"></div>
-           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-           <div className="absolute top-0 right-0 p-12 opacity-20 transform translate-x-1/3 -translate-y-1/3">
-              <div className="w-64 h-64 bg-cyber-accent rounded-full blur-[100px]"></div>
+        
+        {/* Premium Cyber Banner */}
+        <div className="h-64 relative rounded-3xl overflow-hidden shadow-2xl border border-cyber-800 bg-cyber-950 group-hover:border-cyber-accent/30 transition-colors duration-500">
+           
+           {/* Deep Background Gradient */}
+           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-cyber-900 via-cyber-950 to-black"></div>
+
+           {/* Perspective Grid Floor */}
+           <div className="absolute inset-0 cyber-grid opacity-20 [transform:perspective(500px)_rotateX(60deg)_scale(2)] origin-bottom"></div>
+           
+           {/* Tech Texture Overlay */}
+           <div className="absolute inset-0 opacity-10" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2300f2ea' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")` }}></div>
+
+           {/* Animated Ambient Glows */}
+           <div className="absolute -top-32 -right-32 w-[500px] h-[500px] bg-cyber-accent/10 rounded-full blur-[120px] animate-pulse"></div>
+           <div className="absolute top-1/2 left-1/4 w-64 h-64 bg-purple-600/10 rounded-full blur-[80px]"></div>
+
+           {/* Central HUD Element (Rotating Rings) */}
+           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 opacity-20 pointer-events-none select-none">
+              <div className="absolute inset-0 border border-cyber-accent/40 rounded-full animate-[spin_10s_linear_infinite]"></div>
+              <div className="absolute inset-8 border border-dashed border-white/20 rounded-full animate-[spin_15s_linear_infinite_reverse]"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                 <div className="w-2 h-2 bg-cyber-accent rounded-full animate-ping"></div>
+              </div>
            </div>
+
+           {/* Right Side Data Viz */}
+           <div className="absolute top-8 right-8 hidden md:block text-right pointer-events-none select-none">
+              <div className="flex flex-col gap-2 items-end">
+                 <div className="flex items-center gap-2 text-cyber-accent/60 font-mono text-xs">
+                    <Wifi size={14} className="animate-pulse" />
+                    <span>NET: SECURE</span>
+                 </div>
+                 <div className="flex items-center gap-2 text-purple-400/60 font-mono text-xs">
+                    <Cpu size={14} />
+                    <span>CPU: OPTIMAL</span>
+                 </div>
+                 <div className="flex items-center gap-2 text-green-400/60 font-mono text-xs">
+                    <Activity size={14} />
+                    <span>SYS: ONLINE</span>
+                 </div>
+                 
+                 {/* Decorative Bars */}
+                 <div className="mt-2 space-y-1">
+                    <div className="w-24 h-1 bg-cyber-800 rounded-full overflow-hidden">
+                       <div className="h-full bg-cyber-accent/50 w-3/4 animate-[pulse_2s_infinite]"></div>
+                    </div>
+                    <div className="w-16 h-1 bg-cyber-800 rounded-full overflow-hidden ml-auto">
+                       <div className="h-full bg-purple-500/50 w-1/2"></div>
+                    </div>
+                 </div>
+              </div>
+           </div>
+
+           {/* Left Side Identity Code */}
+           <div className="absolute top-8 left-8 hidden md:block opacity-30 pointer-events-none select-none">
+              <div className="font-mono text-xs text-white">
+                 ID: <span className="text-cyber-accent">{user.id.split('-')[0].toUpperCase()}</span>
+                 <br />
+                 ACCESS_LEVEL: <span className="text-purple-400">COMMANDER</span>
+              </div>
+              <div className="mt-2 w-8 h-8 border-l border-t border-white/50"></div>
+           </div>
+
+           {/* Bottom Gradient Fade for Content Overlap */}
+           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
         </div>
         
         {/* Profile Card Overlay */}
@@ -85,7 +144,7 @@ export const Profile: React.FC = () => {
                    <div>
                      <div className="flex flex-col md:flex-row items-center md:items-baseline gap-2 md:gap-4">
                         <h1 className="text-4xl font-black text-gray-900 dark:text-white tracking-tight">{user.username}</h1>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-cyber-accent/10 text-cyber-accent border border-cyber-accent/20 uppercase tracking-widest">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-cyber-accent/10 text-cyber-accent border border-cyber-accent/20 uppercase tracking-widest backdrop-blur-md">
                           Pro Agent
                         </span>
                      </div>
