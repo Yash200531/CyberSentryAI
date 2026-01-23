@@ -35,7 +35,7 @@ export const Auth: React.FC = () => {
           </div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">CyberSentry AI</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-2">
-            {isLogin ? 'Welcome back, Agent.' : 'Initialize your security clearance.'}
+            {isLogin ? 'Welcome back' : 'Initialize your security clearance.'}
           </p>
         </div>
 
@@ -47,7 +47,7 @@ export const Auth: React.FC = () => {
                 type="text"
                 required
                 className="w-full p-3 bg-gray-50 dark:bg-cyber-950 border border-gray-300 dark:border-cyber-700 rounded-lg focus:ring-2 focus:ring-cyber-accent focus:border-transparent outline-none transition-all dark:text-white"
-                placeholder="AgentName"
+                placeholder="Your Name"
                 value={formData.username}
                 onChange={e => setFormData({ ...formData, username: e.target.value })}
               />
@@ -60,7 +60,7 @@ export const Auth: React.FC = () => {
               type="email"
               required
               className="w-full p-3 bg-gray-50 dark:bg-cyber-950 border border-gray-300 dark:border-cyber-700 rounded-lg focus:ring-2 focus:ring-cyber-accent focus:border-transparent outline-none transition-all dark:text-white"
-              placeholder="agent@cybersentry.ai"
+              placeholder="Email@cybersentry.ai"
               value={formData.email}
               onChange={e => setFormData({ ...formData, email: e.target.value })}
             />
