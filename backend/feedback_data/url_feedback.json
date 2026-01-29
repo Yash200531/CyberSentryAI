@@ -20,5 +20,163 @@
     "created_at": "2026-01-19T19:52:55.249565",
     "last_predicted": "2026-01-19T19:53:18.668079",
     "user_ip": "127.0.0.1"
+  },
+  {
+    "url": "http://upi-verify-paytm-secure.com/login",
+    "model_prediction": "phishing",
+    "confidence": 0.92,
+    "user_reports": [],
+    "status": "pending",
+    "prediction_count": 1,
+    "created_at": "2026-01-21T13:59:23.419580",
+    "last_predicted": "2026-01-21T13:59:23.419580",
+    "user_ip": "127.0.0.1"
+  },
+  {
+    "url": "https://www.google.com",
+    "model_prediction": "safe",
+    "confidence": 0.05,
+    "user_reports": [],
+    "status": "pending",
+    "prediction_count": 1,
+    "created_at": "2026-01-21T13:59:43.124428",
+    "last_predicted": "2026-01-21T13:59:43.124428",
+    "user_ip": "127.0.0.1"
+  },
+  {
+    "url": "https://www.ashfiuehgug.com",
+    "model_prediction": "safe",
+    "confidence": 0.05,
+    "user_reports": [],
+    "status": "pending",
+    "prediction_count": 1,
+    "created_at": "2026-01-21T14:00:17.598191",
+    "last_predicted": "2026-01-21T14:00:17.598191",
+    "user_ip": "127.0.0.1"
+  },
+  {
+    "url": "https://www.glauniversity.in",
+    "model_prediction": "safe",
+    "confidence": 0.05,
+    "user_reports": [],
+    "status": "pending",
+    "prediction_count": 2,
+    "created_at": "2026-01-21T14:01:50.724212",
+    "last_predicted": "2026-01-21T14:02:55.379452",
+    "user_ip": "127.0.0.1"
+  },
+  {
+    "url": "https://www.appwebltd.co.uk",
+    "model_prediction": "safe",
+    "confidence": 0.05,
+    "user_reports": [],
+    "status": "pending",
+    "prediction_count": 1,
+    "created_at": "2026-01-21T14:03:29.198919",
+    "last_predicted": "2026-01-21T14:03:29.198919",
+    "user_ip": "127.0.0.1"
+  },
+  {
+    "url": "www.google.com",
+    "model_prediction": "safe",
+    "confidence": 0.05,
+    "user_reports": [],
+    "status": "pending",
+    "prediction_count": 2,
+    "created_at": "2026-01-21T23:31:46.783759",
+    "last_predicted": "2026-01-23T13:19:36.327791",
+    "user_ip": "127.0.0.1"
+  },
+  {
+    "url": "https://www.memcyco.com/5-recent-examples-of-fake-websites/",
+    "model_prediction": "safe",
+    "confidence": 0.05,
+    "user_reports": [],
+    "status": "pending",
+    "prediction_count": 2,
+    "created_at": "2026-01-21T23:32:21.785432",
+    "last_predicted": "2026-01-21T23:32:56.777651",
+    "user_ip": "127.0.0.1"
+  },
+  {
+    "url": "hdfh",
+    "model_prediction": "safe",
+    "confidence": 0.05,
+    "user_reports": [],
+    "status": "pending",
+    "prediction_count": 1,
+    "created_at": "2026-01-21T23:52:22.585695",
+    "last_predicted": "2026-01-21T23:52:22.585695",
+    "user_ip": "127.0.0.1"
+  },
+  {
+    "url": "hf",
+    "model_prediction": "safe",
+    "confidence": 0.05,
+    "user_reports": [],
+    "status": "pending",
+    "prediction_count": 1,
+    "created_at": "2026-01-21T23:52:23.960176",
+    "last_predicted": "2026-01-21T23:52:23.960176",
+    "user_ip": "127.0.0.1"
+  },
+  {
+    "url": "hdfhdfhdfh",
+    "model_prediction": "safe",
+    "confidence": 0.05,
+    "user_reports": [],
+    "status": "pending",
+    "prediction_count": 1,
+    "created_at": "2026-01-21T23:52:27.061725",
+    "last_predicted": "2026-01-21T23:52:27.061725",
+    "user_ip": "127.0.0.1"
+  },
+  {
+    "url": "https://gemini.google.com",
+    "model_prediction": "safe",
+    "confidence": 0.05,
+    "source": "local",
+    "user_reports": [],
+    "status": "pending",
+    "prediction_count": 1,
+    "created_at": "2026-01-22T01:13:01.186745",
+    "last_predicted": "2026-01-22T01:13:01.186745",
+    "user_ip": "127.0.0.1"
+  },
+  {
+    "url": "www.amazon.in\n",
+    "model_prediction": "safe",
+    "confidence": 0.05,
+    "source": "local",
+    "user_reports": [],
+    "status": "pending",
+    "prediction_count": 1,
+    "created_at": "2026-01-23T13:28:33.178690",
+    "last_predicted": "2026-01-23T13:28:33.178690",
+    "user_ip": "127.0.0.1"
+  },
+  {
+    "url": "www.google.com\n",
+    "model_prediction": "safe",
+    "confidence": 0.05,
+    "source": "local",
+    "user_reports": [],
+    "status": "pending",
+    "prediction_count": 1,
+    "created_at": "2026-01-23T13:35:40.037519",
+    "last_predicted": "2026-01-23T13:35:40.037519",
+    "user_ip": "127.0.0.1"
+  },
+  {
+    "url": "wwww.google.com",
+    "model_prediction": "safe",
+    "confidence": 0.05,
+    "source": "local",
+    "user_reports": [],
+    "status": "pending",
+    "prediction_count": 1,
+    "created_at": "2026-01-23T13:48:01.344843",
+    "last_predicted": "2026-01-23T13:48:01.344843",
+    "user_ip": "127.0.0.1"
   }
 ]

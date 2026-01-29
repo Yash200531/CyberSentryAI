@@ -1,0 +1,8 @@
+{
+  "name": "CyberSentryAI",
+  "description": "An enterprise-grade, AI-powered cyber forensics platform featuring Red-Team reasoning, Cyber DNA fingerprinting, and multi-modal scanning (Text, URL, Image, Email).",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

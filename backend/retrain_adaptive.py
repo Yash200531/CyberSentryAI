@@ -119,6 +119,10 @@ def retrain_url_model():
     print(f"Validated feedback samples: {len(feedback_data)} new samples")
     print(f"  - Safe: {len(feedback_data[feedback_data['label'] == 'safe'])}")
     print(f"  - Phishing: {len(feedback_data[feedback_data['label'] == 'phishing'])}")
+
+    export_path = "../datasets/validated_url_feedback.csv"
+    feedback_data.to_csv(export_path, index=False)
+    print(f"✓ Exported validated URL feedback to {export_path}")
     
     # Note: Full URL model retraining would require feature extraction
     # For now, we'll save the feedback data for future use
@@ -131,6 +135,29 @@ def retrain_url_model():
     print("="*60 + "\n")
     
     return False
+
+def export_image_feedback():
+    """Export validated image feedback for future training"""
+    print("\n" + "="*60)
+    print(f"IMAGE FEEDBACK EXPORT - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print("="*60)
+
+    feedback_db = FeedbackDB()
+    feedback_data = feedback_db.get_validated_image_data()
+
+    if feedback_data.empty:
+        print("⚠️ No validated image feedback available. Skipping export.")
+        return False
+
+    output_path = "../datasets/validated_image_feedback.csv"
+    feedback_data.to_csv(output_path, index=False)
+    print(f"✓ Exported {len(feedback_data)} samples to {output_path}")
+
+    print("\n" + "="*60)
+    print("IMAGE FEEDBACK EXPORT COMPLETED")
+    print("="*60 + "\n")
+
+    return True
 
 if __name__ == "__main__":
     print("\n" + "#"*60)
@@ -156,12 +183,16 @@ if __name__ == "__main__":
     
     # Retrain URL model
     url_retrained = retrain_url_model()
+
+    # Export image feedback
+    image_exported = export_image_feedback()
     
     # Summary
     print("\n" + "#"*60)
     print("RETRAINING SUMMARY:")
     print(f"  Text Model: {'✓ RETRAINED' if text_retrained else '✗ SKIPPED'}")
     print(f"  URL Model:  {'✓ RETRAINED' if url_retrained else '✗ SKIPPED'}")
+    print(f"  Image Data: {'✓ EXPORTED' if image_exported else '✗ SKIPPED'}")
     print("#"*60 + "\n")
     
     if text_retrained or url_retrained:

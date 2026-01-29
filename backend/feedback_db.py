@@ -12,6 +12,7 @@ class FeedbackDB:
         self.feedback_dir = feedback_dir
         self.text_feedback_file = os.path.join(feedback_dir, "text_feedback.json")
         self.url_feedback_file = os.path.join(feedback_dir, "url_feedback.json")
+        self.image_feedback_file = os.path.join(feedback_dir, "image_feedback.json")
         
         # Create directories if they don't exist
         os.makedirs(feedback_dir, exist_ok=True)
@@ -21,6 +22,17 @@ class FeedbackDB:
             self._save_json(self.text_feedback_file, [])
         if not os.path.exists(self.url_feedback_file):
             self._save_json(self.url_feedback_file, [])
+        if not os.path.exists(self.image_feedback_file):
+            self._save_json(self.image_feedback_file, [])
+
+    def _get_feedback_path(self, data_type):
+        if data_type == "text":
+            return self.text_feedback_file
+        if data_type == "url":
+            return self.url_feedback_file
+        if data_type == "image":
+            return self.image_feedback_file
+        raise ValueError("Invalid data_type")
     
     def _load_json(self, filepath):
         """Load JSON file"""
@@ -32,7 +44,7 @@ class FeedbackDB:
         with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
     
-    def add_text_prediction(self, text, is_scam, confidence, user_ip=None):
+    def add_text_prediction(self, text, is_scam, confidence, user_ip=None, source=None):
         """Store automatic prediction for text"""
         feedback_data = self._load_json(self.text_feedback_file)
         
@@ -49,6 +61,7 @@ class FeedbackDB:
             'text': text,
             'model_prediction': 'scam' if is_scam else 'safe',
             'confidence': confidence,
+            'source': source,
             'user_reports': [],
             'status': 'pending',  # pending, validated, rejected
             'prediction_count': 1,
@@ -59,7 +72,7 @@ class FeedbackDB:
         feedback_data.append(entry)
         self._save_json(self.text_feedback_file, feedback_data)
     
-    def add_url_prediction(self, url, is_phishing, confidence, user_ip=None):
+    def add_url_prediction(self, url, is_phishing, confidence, user_ip=None, source=None):
         """Store automatic prediction for URL"""
         feedback_data = self._load_json(self.url_feedback_file)
         
@@ -76,6 +89,7 @@ class FeedbackDB:
             'url': url,
             'model_prediction': 'phishing' if is_phishing else 'safe',
             'confidence': confidence,
+            'source': source,
             'user_reports': [],
             'status': 'pending',
             'prediction_count': 1,
@@ -165,6 +179,71 @@ class FeedbackDB:
         
         self._save_json(self.url_feedback_file, feedback_data)
         return True
+
+    def add_image_prediction(self, image_id, is_fake, confidence, user_ip=None, source=None, reference=None):
+        """Store automatic prediction for image"""
+        feedback_data = self._load_json(self.image_feedback_file)
+
+        for item in feedback_data:
+            if item.get('image_id') == image_id:
+                item['prediction_count'] += 1
+                item['last_predicted'] = datetime.now().isoformat()
+                self._save_json(self.image_feedback_file, feedback_data)
+                return
+
+        entry = {
+            'image_id': image_id,
+            'reference': reference,
+            'model_prediction': 'fake' if is_fake else 'real',
+            'confidence': confidence,
+            'source': source,
+            'user_reports': [],
+            'status': 'pending',
+            'prediction_count': 1,
+            'created_at': datetime.now().isoformat(),
+            'last_predicted': datetime.now().isoformat(),
+            'user_ip': user_ip
+        }
+        feedback_data.append(entry)
+        self._save_json(self.image_feedback_file, feedback_data)
+
+    def add_image_report(self, image_id, user_label, user_ip=None, comment="", reference=None):
+        """Add user report for image (real/fake)"""
+        feedback_data = self._load_json(self.image_feedback_file)
+
+        entry = None
+        for item in feedback_data:
+            if item.get('image_id') == image_id:
+                entry = item
+                break
+
+        if not entry:
+            entry = {
+                'image_id': image_id,
+                'reference': reference,
+                'model_prediction': None,
+                'confidence': None,
+                'source': None,
+                'user_reports': [],
+                'status': 'pending',
+                'prediction_count': 0,
+                'created_at': datetime.now().isoformat(),
+                'last_predicted': None,
+                'user_ip': user_ip
+            }
+            feedback_data.append(entry)
+
+        report = {
+            'label': user_label,  # 'real' or 'fake'
+            'user_ip': user_ip,
+            'comment': comment,
+            'timestamp': datetime.now().isoformat()
+        }
+        entry['user_reports'].append(report)
+
+        self._check_validation_threshold(entry)
+        self._save_json(self.image_feedback_file, feedback_data)
+        return True
     
     def _check_validation_threshold(self, entry, threshold=3):
         """Check if entry meets validation threshold"""
@@ -232,19 +311,48 @@ class FeedbackDB:
             })
         
         return pd.DataFrame(training_data)
+
+    def get_validated_image_data(self):
+        """Get validated image entries for retraining or export"""
+        feedback_data = self._load_json(self.image_feedback_file)
+        validated = [
+            item for item in feedback_data
+            if item['status'] == 'validated' and item['user_reports']
+        ]
+
+        training_data = []
+        for item in validated:
+            votes = {}
+            for report in item['user_reports']:
+                label = report['label']
+                votes[label] = votes.get(label, 0) + 1
+
+            final_label = max(votes, key=votes.get)
+            training_data.append({
+                'image_id': item.get('image_id'),
+                'reference': item.get('reference'),
+                'label': final_label
+            })
+
+        return pd.DataFrame(training_data)
     
     def get_pending_reviews(self, data_type='text'):
         """Get items pending review"""
-        filepath = self.text_feedback_file if data_type == 'text' else self.url_feedback_file
+        filepath = self._get_feedback_path(data_type)
         feedback_data = self._load_json(filepath)
         return [item for item in feedback_data if item['status'] == 'pending']
     
     def admin_validate(self, data_type, identifier, status):
         """Admin manual validation"""
-        filepath = self.text_feedback_file if data_type == 'text' else self.url_feedback_file
+        filepath = self._get_feedback_path(data_type)
         feedback_data = self._load_json(filepath)
-        
-        key = 'text' if data_type == 'text' else 'url'
+
+        if data_type == 'text':
+            key = 'text'
+        elif data_type == 'url':
+            key = 'url'
+        else:
+            key = 'image_id'
         for item in feedback_data:
             if item[key] == identifier:
                 item['status'] = status  # 'validated' or 'rejected'
@@ -253,10 +361,16 @@ class FeedbackDB:
         
         self._save_json(filepath, feedback_data)
     
+    def get_feedback_data(self, data_type='text'):
+        """Get raw feedback data"""
+        filepath = self._get_feedback_path(data_type)
+        return self._load_json(filepath)
+
     def get_stats(self):
         """Get statistics about feedback data"""
         text_data = self._load_json(self.text_feedback_file)
         url_data = self._load_json(self.url_feedback_file)
+        image_data = self._load_json(self.image_feedback_file)
         
         return {
             'text': {
@@ -270,5 +384,11 @@ class FeedbackDB:
                 'pending': len([x for x in url_data if x['status'] == 'pending']),
                 'validated': len([x for x in url_data if x['status'] == 'validated']),
                 'rejected': len([x for x in url_data if x['status'] == 'rejected'])
+            },
+            'image': {
+                'total': len(image_data),
+                'pending': len([x for x in image_data if x['status'] == 'pending']),
+                'validated': len([x for x in image_data if x['status'] == 'validated']),
+                'rejected': len([x for x in image_data if x['status'] == 'rejected'])
             }
         }

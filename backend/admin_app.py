@@ -32,6 +32,9 @@ def get_stats():
     
     if not verify_admin(password):
         return jsonify({"error": "Unauthorized"}), 401
+
+    if data_type not in ["text", "url", "image"]:
+        return jsonify({"error": "Type must be 'text', 'url', or 'image'"}), 400
     
     stats = feedback_db.get_stats()
     return jsonify(stats)
@@ -41,10 +44,13 @@ def get_pending_reviews():
     """Get all pending reviews for admin validation"""
     data = request.json
     password = data.get("password", "")
-    data_type = data.get("type", "text")  # 'text' or 'url'
+    data_type = data.get("type", "text")  # 'text', 'url', or 'image'
     
     if not verify_admin(password):
         return jsonify({"error": "Unauthorized"}), 401
+
+    if data_type not in ["text", "url", "image"]:
+        return jsonify({"error": "Type must be 'text', 'url', or 'image'"}), 400
     
     pending = feedback_db.get_pending_reviews(data_type)
     
@@ -62,8 +68,8 @@ def validate_item():
     """Admin manually validates or rejects an item"""
     data = request.json
     password = data.get("password", "")
-    data_type = data.get("type", "text")  # 'text' or 'url'
-    identifier = data.get("identifier", "")  # The text or URL
+    data_type = data.get("type", "text")  # 'text', 'url', or 'image'
+    identifier = data.get("identifier", "")  # The text, URL, or image_id
     status = data.get("status", "validated")  # 'validated' or 'rejected'
     
     if not verify_admin(password):
@@ -110,10 +116,10 @@ def export_feedback():
     if not verify_admin(password):
         return jsonify({"error": "Unauthorized"}), 401
     
-    if data_type == "text":
-        feedback_data = feedback_db._load_json(feedback_db.text_feedback_file)
-    else:
-        feedback_data = feedback_db._load_json(feedback_db.url_feedback_file)
+    try:
+        feedback_data = feedback_db.get_feedback_data(data_type)
+    except ValueError:
+        return jsonify({"error": "Type must be 'text', 'url', or 'image'"}), 400
     
     return jsonify({
         "type": data_type,
