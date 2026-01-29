@@ -43,9 +43,6 @@ pip install -r requirements.txt
 copy .env.example .env  # Windows
 # cp .env.example .env  # Linux/Mac
 
-# Edit .env and add your Hugging Face token
-# Get yours at: https://huggingface.co/settings/tokens
-```
 
 **Required in `.env`:**
 ```bash
