@@ -1,0 +1,151 @@
+╔══════════════════════════════════════════════════════════════════════╗
+║                                                                      ║
+║              CyberSentryAI v2.0 - QUICK REFERENCE CARD              ║
+║                                                                      ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────┐
+│  🚀 GETTING STARTED                                                 │
+├─────────────────────────────────────────────────────────────────────┤
+│  1. cd backend                                                      │
+│  2. setup.bat          # Windows automated setup                    │
+│     OR                                                              │
+│     pip install -r requirements.txt                                 │
+│  3. Edit .env - Add HF_API_TOKEN                                    │
+│  4. python start.py    # Launches server                            │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│  📡 API ENDPOINTS                                                   │
+├─────────────────────────────────────────────────────────────────────┤
+│  POST /scan/text       - Scan text/SMS                             │
+│  POST /scan/url        - Scan URL for phishing                     │
+│  POST /scan/image      - Scan image for deepfakes                  │
+│  POST /scan/email      - Scan email content                        │
+│  GET  /history         - Query scan history                        │
+│  GET  /stats           - Daily statistics                          │
+│  GET  /health          - Health check                              │
+│  GET  /docs            - Interactive API documentation             │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│  🤖 HUGGING FACE MODELS                                             │
+├─────────────────────────────────────────────────────────────────────┤
+│  Red-Team:   HuggingFaceH4/zephyr-7b-beta                          │
+│  Embeddings: sentence-transformers/all-MiniLM-L6-v2                │
+│  Text:       mrm8488/bert-tiny-finetuned-sms-spam-detection        │
+│  Image:      prithivMLmods/DeepFake-Detection                      │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│  📂 NEW FILES (Core Implementation)                                 │
+├─────────────────────────────────────────────────────────────────────┤
+│  backend/main.py                    - Unified FastAPI              │
+│  backend/redteam_engine.py         - Red-Team AI                   │
+│  backend/cyber_dna_engine.py       - Cyber DNA fingerprinting      │
+│  backend/scan_logger.py            - Unified logging               │
+│  backend/performance_optimizations.py - Async & caching            │
+│  backend/start.py                  - Smart startup script          │
+│  backend/test_integration.py       - Test suite                    │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│  📊 LOGGING OUTPUT                                                  │
+├─────────────────────────────────────────────────────────────────────┤
+│  backend/logs/scans.jsonl          - All scan records              │
+│  backend/logs/cyber_dna.jsonl      - DNA fingerprints              │
+│  backend/logs/redteam_analysis.jsonl - Red-team reports            │
+│  backend/logs/daily_stats.json     - Daily metrics                 │
+│  backend/exports/                  - Dataset exports (JSON/CSV)    │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│  🧪 TESTING                                                         │
+├─────────────────────────────────────────────────────────────────────┤
+│  Integration Test:                                                 │
+│    cd backend                                                      │
+│    python test_integration.py                                      │
+│                                                                     │
+│  Manual API Test:                                                  │
+│    curl http://localhost:8000/health                               │
+│    curl -X POST http://localhost:8000/scan/text \                 │
+│      -H "Content-Type: application/json" \                         │
+│      -d '{"text": "Urgent! Verify account now!"}'                  │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│  📚 DOCUMENTATION                                                   │
+├─────────────────────────────────────────────────────────────────────┤
+│  README.md             - Quick start guide                         │
+│  IMPLEMENTATION.md     - Complete technical docs (5000+ words)     │
+│  MODELS.md             - Model selection & benchmarks              │
+│  DELIVERY.md           - Implementation summary                    │
+│  PROJECT_SUMMARY.md    - Executive overview                        │
+│  http://localhost:8000/docs - Interactive API docs                │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│  ⚡ PERFORMANCE                                                     │
+├─────────────────────────────────────────────────────────────────────┤
+│  Text scan (simple):        1-2 seconds                            │
+│  Text + RedTeam + DNA:      3-5 seconds                            │
+│  URL scan:                  1-2 seconds                            │
+│  Image scan:                2-4 seconds                            │
+│  Embedding generation:      ~50ms                                  │
+│  Similarity search:         <1 second                              │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│  🔑 CONFIGURATION (.env)                                            │
+├─────────────────────────────────────────────────────────────────────┤
+│  HF_API_TOKEN=hf_xxxxx               # REQUIRED                    │
+│  HF_TIMEOUT=15                        # API timeout (seconds)      │
+│  API_HOST=0.0.0.0                     # Server host                │
+│  API_PORT=8000                        # Server port                │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│  🎯 KEY FEATURES                                                    │
+├─────────────────────────────────────────────────────────────────────┤
+│  ✅ Red-Team AI - Attacker psychology analysis                     │
+│  ✅ Cyber DNA - 6-dimensional threat fingerprinting                │
+│  ✅ Unified API - Single FastAPI endpoint                          │
+│  ✅ Complete Logging - Full audit trail (JSONL)                    │
+│  ✅ Performance - Async operations, 300s caching                   │
+│  ✅ 100% HuggingFace - No Gemini dependencies                      │
+│  ✅ Production Ready - Error handling, validation                  │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│  🐛 TROUBLESHOOTING                                                 │
+├─────────────────────────────────────────────────────────────────────┤
+│  "Model is loading"     → Wait 20s and retry                       │
+│  "401 Unauthorized"     → Check HF_API_TOKEN in .env               │
+│  "ModuleNotFoundError"  → pip install -r requirements.txt          │
+│  Slow responses         → Check HF API status, reduce timeout      │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│  📞 SUPPORT                                                         │
+├─────────────────────────────────────────────────────────────────────┤
+│  HuggingFace API: https://huggingface.co/docs/api-inference       │
+│  FastAPI Docs:    https://fastapi.tiangolo.com                    │
+│  Local API Docs:  http://localhost:8000/docs                      │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│  ✅ VERIFICATION CHECKLIST                                          │
+├─────────────────────────────────────────────────────────────────────┤
+│  [ ] Dependencies installed (pip install -r requirements.txt)      │
+│  [ ] .env file exists with valid HF_API_TOKEN                      │
+│  [ ] Models exist (text_scam_model.pkl, url_phishing_model.pkl)   │
+│  [ ] Directories created (logs/, exports/, models/)                │
+│  [ ] Server starts (python start.py)                               │
+│  [ ] Health check passes (curl http://localhost:8000/health)      │
+│  [ ] Test scan works                                               │
+│  [ ] Logs are written (backend/logs/scans.jsonl)                  │
+└─────────────────────────────────────────────────────────────────────┘
+
+╔══════════════════════════════════════════════════════════════════════╗
+║  Version: 2.0.0  │  Status: PRODUCTION READY  │  Date: Jan 22, 2026 ║
+╚══════════════════════════════════════════════════════════════════════╝
