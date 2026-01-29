@@ -1,85 +1,33 @@
-import { User, ScanResult, UserRole, ScanType, ThreatLevel } from '../types';
+import { User, ScanResult, ThreatLevel } from '../types';
 
 // Keys
-const USERS_KEY = 'cybersentry_users';
 const SCANS_KEY = 'cybersentry_scans';
-const SESSION_KEY = 'cybersentry_session';
+const AVATAR_KEY = 'cybersentry_avatars';
 
 // Mock Data Initialization
 const initStorage = () => {
-  if (!localStorage.getItem(USERS_KEY)) {
-    const admin: User = {
-      id: 'admin-1',
-      username: 'ShadowAdmin',
-      email: 'admin@cybersentry.ai',
-      role: UserRole.ADMIN,
-      avatarUrl: 'https://picsum.photos/id/2/200/200'
-    };
-    const user: User = {
-      id: 'user-1',
-      username: 'SecAnalyst',
-      email: 'analyst@ji.ai',
-      role: UserRole.USER,
-      avatarUrl: 'https://picsum.photos/id/3/200/200'
-    };
-    localStorage.setItem(USERS_KEY, JSON.stringify([admin, user]));
-  }
   if (!localStorage.getItem(SCANS_KEY)) {
     localStorage.setItem(SCANS_KEY, JSON.stringify([]));
+  }
+  if (!localStorage.getItem(AVATAR_KEY)) {
+    localStorage.setItem(AVATAR_KEY, JSON.stringify({}));
   }
 };
 
 initStorage();
 
-// User Services
-export const getUsers = (): User[] => {
-  return JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
-};
-
-export const loginUser = async (email: string): Promise<User | null> => {
-  // Simulating network delay
-  await new Promise(resolve => setTimeout(resolve, 800));
-  const users = getUsers();
-  const user = users.find(u => u.email === email);
-  if (user) {
-    localStorage.setItem(SESSION_KEY, JSON.stringify(user));
-    return user;
-  }
-  return null;
-};
-
-export const logoutUser = () => {
-  localStorage.removeItem(SESSION_KEY);
-};
-
-export const getCurrentUser = (): User | null => {
-  const session = localStorage.getItem(SESSION_KEY);
-  return session ? JSON.parse(session) : null;
-};
-
-// Simulate Backend API for Profile Image Update
-export const updateUserAvatar = async (userId: string, base64Image: string): Promise<User | null> => {
-  // Simulate network latency
+// Profile Image Update (local cache)
+export const updateUserAvatar = async (
+  userId: string,
+  base64Image: string
+): Promise<Partial<User> | null> => {
   await new Promise(resolve => setTimeout(resolve, 500));
 
-  const users = getUsers();
-  const userIndex = users.findIndex(u => u.id === userId);
+  const avatarMap = JSON.parse(localStorage.getItem(AVATAR_KEY) || '{}');
+  avatarMap[userId] = base64Image;
+  localStorage.setItem(AVATAR_KEY, JSON.stringify(avatarMap));
 
-  if (userIndex === -1) return null;
-
-  // Update in DB
-  users[userIndex].avatarUrl = base64Image;
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-
-  // Update in Session if it's the current user
-  const currentUser = getCurrentUser();
-  if (currentUser && currentUser.id === userId) {
-    currentUser.avatarUrl = base64Image;
-    localStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
-    return currentUser;
-  }
-
-  return users[userIndex];
+  return { id: userId, avatarUrl: base64Image };
 };
 
 // Scan Services

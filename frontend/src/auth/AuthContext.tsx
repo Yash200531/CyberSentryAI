@@ -24,11 +24,12 @@ type AuthContextType = {
   isAuthenticated: boolean;
   loading: boolean;
   isLoading: boolean; // alias to satisfy older components
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<{ success: boolean; status?: number }>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
   hasRole: (role: string) => boolean;
   hasScope: (scope: string) => boolean;
+  updateUser: (nextUser: Partial<User>) => void;
 };
 
 /* =======================
@@ -67,16 +68,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
      API Calls
   ======================= */
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (
+    email: string,
+    password: string
+  ): Promise<{ success: boolean; status?: number }> => {
     setLoading(true);
     try {
-      const { user, access_token } = await authApi.login(email, password);
-      authApi.setAccessToken(access_token);
-      setUser(user);
-      return true;
-    } catch (err) {
+      const { token, role, email: matchedEmail } = await authApi.login(email, password);
+      authApi.setAccessToken(token);
+      setUser({
+        id: matchedEmail,
+        email: matchedEmail,
+        roles: [role],
+        scopes: [],
+      });
+      return { success: true };
+    } catch (err: any) {
       console.error("login failed", err);
-      return false;
+      return { success: false, status: err?.response?.status };
     } finally {
       setLoading(false);
     }
@@ -111,6 +120,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   ======================= */
 
   useEffect(() => {
+    localStorage.removeItem("cybersentry_session");
+    localStorage.removeItem("cybersentry_users");
+    sessionStorage.removeItem("cybersentry_session");
+    sessionStorage.removeItem("cybersentry_users");
+    authApi.clearAccessToken();
+
     const restoreSession = async () => {
       // Skip session restore if no token exists - avoids hanging on first load
       if (!authApi.getAccessToken()) {
@@ -135,6 +150,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
      Axios Interceptor
   ======================= */
 
+  const updateUser = useCallback((nextUser: Partial<User>) => {
+    setUser((prev) => (prev ? { ...prev, ...nextUser } : (nextUser as User)));
+  }, []);
+
   const value = useMemo(
     () => ({
       user,
@@ -146,8 +165,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       refresh,
       hasRole,
       hasScope,
+      updateUser,
     }),
-    [user, isAuthenticated, loading, hasRole, hasScope]
+    [user, isAuthenticated, loading, hasRole, hasScope, updateUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

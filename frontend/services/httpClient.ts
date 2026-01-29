@@ -7,7 +7,10 @@ export const setAuthTokenGetter = (fn: () => string | null) => {
 };
 
 const http = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE || 'http://localhost:5003',
+  baseURL:
+    import.meta.env.VITE_API_BASE ||
+    import.meta.env.VITE_BACKEND_URL ||
+    'https://cybersentryai-backend.up.railway.app',
   withCredentials: true,
   timeout: 10000, // 10s - fail fast on unresponsive backend
 });

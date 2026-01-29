@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from flask import Blueprint, current_app, jsonify, request
+import os
 from flask_jwt_extended import (
     JWTManager,
     create_access_token,
@@ -12,7 +13,8 @@ from flask_jwt_extended import (
     jwt_required,
 )
 
-from .models import SessionLocal, User
+from .models import SessionLocal, User, Role
+from sqlalchemy import func
 from .utils import TOKEN_BLOCKLIST, block_token, is_token_blocked
 
 jwt = JWTManager()
@@ -52,28 +54,55 @@ def configure_jwt_callbacks(app) -> None:
 @auth_bp.post("/login")
 def login():
     data = request.get_json(force=True)
-    email = (data.get("email") or "").lower().strip()
+    email = (data.get("email") or "").strip()
     password = data.get("password") or ""
 
+    admin_email = (os.environ.get("ADMIN_EMAIL") or "admin@cyber.in").strip().lower()
+    admin_password = os.environ.get("ADMIN_PASSWORD") or "Admintest123"
+    analyst_email = (os.environ.get("ANALYST_EMAIL") or "analyst@co.in").strip().lower()
+    analyst_password = os.environ.get("ANALYST_PASSWORD") or "Sw@gtm!1"
+
+    normalized_email = email.lower()
+    if normalized_email == admin_email and password == admin_password:
+        matched_role = "admin"
+        matched_email = admin_email
+        scopes = ["alerts:read", "alerts:write"]
+    elif normalized_email == analyst_email and password == analyst_password:
+        matched_role = "analyst"
+        matched_email = analyst_email
+        scopes = ["alerts:read", "reports:read"]
+    else:
+        return jsonify({"msg": "Invalid credentials"}), 401
+
+    current_app.logger.info("Auth matched role: %s", matched_role)
+
     with SessionLocal() as session:
-        user = session.query(User).filter(User.email == email).one_or_none()
-        if not user or not user.verify_password(password) or not user.is_active:
-            return jsonify({"msg": "Invalid credentials"}), 401
+        role_record = session.query(Role).filter_by(name=matched_role).one_or_none()
+        user = session.query(User).filter(func.lower(User.email) == matched_email).one_or_none()
+        if not user:
+            user = User(email=matched_email, scopes=" ".join(scopes), is_active=True)
+            user.set_password(password)
+            if role_record:
+                user.roles = [role_record]
+            session.add(user)
+            session.flush()
+        else:
+            if not user.verify_password(password):
+                user.set_password(password)
+            user.scopes = " ".join(scopes)
+            user.is_active = True
+            if role_record:
+                user.roles = [role_record]
+
+        session.commit()
 
         access_token = create_access_token(identity=user.id)
         refresh_token = create_refresh_token(identity=user.id)
 
-        roles = [r.name for r in user.roles]
-        scopes = (user.scopes or "").split()
-
         resp = jsonify({
-            "access_token": access_token,
-            "user": {
-                "id": user.id,
-                "email": user.email,
-                "roles": roles,
-                "scopes": scopes,
-            },
+            "token": access_token,
+            "role": matched_role,
+            "email": matched_email,
         })
         resp.set_cookie(
             current_app.config.get("JWT_REFRESH_COOKIE_NAME", "refresh_token"),

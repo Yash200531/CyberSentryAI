@@ -16,7 +16,7 @@ if not hasattr(_bcrypt, "__about__"):
     _bcrypt.__about__ = _About()
 
 from passlib.hash import bcrypt as passlib_bcrypt
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table, create_engine
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table, create_engine, func
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
 DATABASE_URL = os.environ.get("AUTH_DATABASE_URL", "sqlite:///auth.db")
@@ -70,6 +70,11 @@ def init_db() -> None:
     """Create tables and seed default users/roles if empty."""
     Base.metadata.create_all(engine)
     with SessionLocal() as session:
+        admin_email = (os.environ.get("ADMIN_EMAIL") or "admin@cyber.in").strip().lower()
+        admin_password = os.environ.get("ADMIN_PASSWORD") or "Admintest123"
+        analyst_email = (os.environ.get("ANALYST_EMAIL") or "analyst@co.in").strip().lower()
+        analyst_password = os.environ.get("ANALYST_PASSWORD") or "Sw@gtm!1"
+
         # Seed roles
         admin_role = session.query(Role).filter_by(name="admin").one_or_none()
         analyst_role = session.query(Role).filter_by(name="analyst").one_or_none()
@@ -81,20 +86,36 @@ def init_db() -> None:
             session.add(analyst_role)
         session.flush()
 
+        # Remove any legacy/demo users
+        allowed_emails = {admin_email, analyst_email}
+        for user in session.query(User).all():
+            if user.email.lower() not in allowed_emails:
+                session.delete(user)
+
         # Seed users
-        admin_user = session.query(User).filter_by(email="admin@cybersentry.ai").one_or_none()
+        admin_user = session.query(User).filter(func.lower(User.email) == admin_email).one_or_none()
         if not admin_user:
-            admin_user = User(email="admin@cybersentry.ai", scopes="alerts:read alerts:write")
-            admin_user.set_password(os.environ.get("ADMIN_DEFAULT_PASSWORD", "admin123"))
+            admin_user = User(email=admin_email, scopes="alerts:read alerts:write", is_active=True)
+            admin_user.set_password(admin_password)
             admin_user.roles = [admin_role]
             session.add(admin_user)
+        else:
+            if not admin_user.verify_password(admin_password):
+                admin_user.set_password(admin_password)
+            admin_user.roles = [admin_role]
+            admin_user.is_active = True
 
-        analyst_user = session.query(User).filter_by(email="analyst@corp.com").one_or_none()
+        analyst_user = session.query(User).filter(func.lower(User.email) == analyst_email).one_or_none()
         if not analyst_user:
-            analyst_user = User(email="analyst@corp.com", scopes="alerts:read reports:read")
-            analyst_user.set_password(os.environ.get("ANALYST_DEFAULT_PASSWORD", "analyst123"))
+            analyst_user = User(email=analyst_email, scopes="alerts:read reports:read", is_active=True)
+            analyst_user.set_password(analyst_password)
             analyst_user.roles = [analyst_role]
             session.add(analyst_user)
+        else:
+            if not analyst_user.verify_password(analyst_password):
+                analyst_user.set_password(analyst_password)
+            analyst_user.roles = [analyst_role]
+            analyst_user.is_active = True
 
         session.commit()
 

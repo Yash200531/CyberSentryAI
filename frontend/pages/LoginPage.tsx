@@ -1,25 +1,38 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { User as UserIcon } from 'lucide-react';
 import Logo from '../components/Logo';
 
 const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState('analyst@ji.ai');
-  const [password, setPassword] = useState('Sw@gtm!1');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    localStorage.removeItem('cybersentry_session');
+    localStorage.removeItem('cybersentry_users');
+    sessionStorage.removeItem('cybersentry_session');
+    sessionStorage.removeItem('cybersentry_users');
+    setEmail('');
+    setPassword('');
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
-    const success = await login(email, password);
-    if (success) {
+    const result = await login(email, password);
+    if (result.success) {
       // Default redirect to New Scan page as per requirements
       navigate('/app/scan');
     } else {
-      setErrorMessage('Invalid credentials. Please try again.');
+      if (result.status === 401) {
+        setErrorMessage('Invalid email or password');
+      } else {
+        setErrorMessage('Login failed. Please try again.');
+      }
     }
   };
 
@@ -37,25 +50,25 @@ const LoginPage: React.FC = () => {
           <p className="text-cyber-muted text-sm mt-2">Enter credentials to access the grid</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
           {errorMessage && (
             <div className="rounded border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300 font-mono">
               {errorMessage}
             </div>
           )}
           <div>
-            <label htmlFor="login-email" className="block text-xs font-mono text-cyber-primary mb-2 uppercase tracking-widest">Identifier</label>
+            <label htmlFor="login-email" className="block text-xs font-mono text-cyber-primary mb-2 uppercase tracking-widest">Email</label>
             <div className="relative">
               <UserIcon className="absolute left-3 top-3 w-5 h-5 text-gray-500" />
               <input 
                 id="login-email"
-                name="email"
+                name="login-email"
                 type="email" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-black/40 border border-cyber-border rounded px-10 py-3 text-white focus:outline-none focus:border-cyber-primary transition-colors"
-                placeholder="analyst@ji.ai"
-                autoComplete="username"
+                placeholder="name@company.com"
+                autoComplete="off"
               />
             </div>
           </div>
@@ -64,13 +77,13 @@ const LoginPage: React.FC = () => {
             <label htmlFor="login-password" className="block text-xs font-mono text-cyber-primary mb-2 uppercase tracking-widest">Passcode</label>
             <input 
               id="login-password"
-              name="password"
+              name="login-password"
               type="password" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full bg-black/40 border border-cyber-border rounded px-4 py-3 text-white focus:outline-none focus:border-cyber-primary transition-colors"
               placeholder="••••••••"
-              autoComplete="current-password"
+              autoComplete="off"
             />
           </div>
 

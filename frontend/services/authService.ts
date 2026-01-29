@@ -18,7 +18,10 @@ export const authApi = {
   getAccessToken,
   setAccessToken,
   clearAccessToken,
-  async login(email: string, password: string): Promise<{ user: User; access_token: string }> {
+  async login(
+    email: string,
+    password: string
+  ): Promise<{ token: string; role: string; email: string }> {
     const { data } = await http.post('/auth/login', { email, password });
     return data;
   },
