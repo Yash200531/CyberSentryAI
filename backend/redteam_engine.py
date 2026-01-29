@@ -78,10 +78,10 @@ class RedTeamEngine:
         Returns:
             Red-team analysis with attack goal, victim profile, exploitation chain
         """
-        is_threat = scan_result.get("is_scam") or scan_result.get("is_phishing", False)
         confidence = scan_result.get("score", 0) * 100
+        is_threat = confidence >= 30
         
-        if not is_threat or confidence < 50:
+        if not is_threat:
             # Not a significant threat, return minimal analysis
             return self._minimal_analysis("low_threat")
         
@@ -108,10 +108,10 @@ class RedTeamEngine:
         Returns:
             Red-team analysis
         """
-        is_threat = scan_result.get("is_phishing", False)
         confidence = scan_result.get("score", 0) * 100
+        is_threat = confidence >= 30
         
-        if not is_threat or confidence < 50:
+        if not is_threat:
             return self._minimal_analysis("low_threat")
         
         prompt = self._build_url_prompt(url, confidence)
@@ -135,10 +135,10 @@ class RedTeamEngine:
         Returns:
             Red-team analysis
         """
-        is_threat = image_result.get("is_fake", False)
         confidence = image_result.get("score", 0) * 100
+        is_threat = confidence >= 30
         
-        if not is_threat or confidence < 50:
+        if not is_threat:
             return self._minimal_analysis("low_threat")
         
         prompt = self._build_image_prompt(image_result, confidence)

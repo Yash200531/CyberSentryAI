@@ -112,6 +112,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     const restoreSession = async () => {
+      // Skip session restore if no token exists - avoids hanging on first load
+      if (!authApi.getAccessToken()) {
+        setLoading(false);
+        return;
+      }
+
       try {
         const me = await authApi.me();
         setUser(me);

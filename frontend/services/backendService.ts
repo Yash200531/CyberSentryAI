@@ -1,24 +1,12 @@
 import { ScanType, ScanResult, ThreatLevel, RedTeamReport, CyberDNA } from '../types';
 
-const TEXT_API_URL = import.meta.env.VITE_TEXT_API_URL || 'http://localhost:5000';
-const URL_API_URL = import.meta.env.VITE_URL_API_URL || 'http://localhost:5001';
-const IMAGE_API_URL = import.meta.env.VITE_IMAGE_API_URL || 'http://localhost:5003';
-
-type ScanBuilderInput = {
-  type: ScanType;
-  userId: string;
-  contentSnippet: string;
-  riskScore: number;
-  threatLevel: ThreatLevel;
-  redTeamReport: RedTeamReport;
-  cyberDNA: CyberDNA;
-};
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const clamp = (value: number, min = 0, max = 100) => Math.min(Math.max(value, min), max);
 
-const toRiskScore = (confidence: number | undefined) => {
-  if (confidence === undefined || Number.isNaN(confidence)) return 0;
-  return clamp(confidence > 1 ? confidence : confidence * 100);
+const toRiskScore = (riskScore: number | undefined) => {
+  if (riskScore === undefined || isNaN(riskScore)) return 0;
+  return clamp(Math.round(riskScore));
 };
 
 const generateId = () =>
@@ -28,7 +16,7 @@ const generateId = () =>
 
 const createFingerprint = (input: string) => {
   let hash = 0;
-  for (let i = 0; i < input.length; i += 1) {
+  for (let i = 0; i < input.length; i++) {
     hash = (hash << 5) - hash + input.charCodeAt(i);
     hash |= 0;
   }
@@ -36,124 +24,189 @@ const createFingerprint = (input: string) => {
 };
 
 const normalizeThreatLevel = (
-  riskLabel: string | undefined,
-  isThreat: boolean,
-  riskScore: number
+  _riskLabel: string | undefined,
+  riskScore: number,
+  content: string
 ): ThreatLevel => {
-  const label = (riskLabel || '').toLowerCase();
-  if (!isThreat && riskScore < 35) return ThreatLevel.SAFE;
-  if (label.includes('critical')) return ThreatLevel.CRITICAL;
-  if (label.includes('high')) return ThreatLevel.MALICIOUS;
-  if (label.includes('medium')) return ThreatLevel.SUSPICIOUS;
-  if (label.includes('low')) return isThreat ? ThreatLevel.SUSPICIOUS : ThreatLevel.SAFE;
-  if (!isThreat) return ThreatLevel.SAFE;
-  if (riskScore >= 85) return ThreatLevel.CRITICAL;
-  if (riskScore >= 60) return ThreatLevel.MALICIOUS;
-  return ThreatLevel.SUSPICIOUS;
+  const text = content.toLowerCase();
+  const hasLink = /https?:\/\//.test(text) || /\bwww\./.test(text);
+  const hasVerification = /verify|verification|code|otp|password|pin/.test(text);
+  const hasAccountSecure = /account|secure|security/.test(text);
+  const hasBankUrgent = /(bank|upi|card|payment).*(urgent|immediately|now)/.test(text);
+  const impersonation = /(bank|upi|google|amazon|govt|government|irs|police)/.test(text);
+  const financialAction = /(payment|pay|refund|transfer|invoice)/.test(text) && /click|tap|visit|login|verify|update/.test(text);
+
+  const heuristicThreat =
+    (hasVerification && hasLink) ||
+    (hasAccountSecure && /secure/.test(text)) ||
+    hasBankUrgent ||
+    (impersonation && hasLink) ||
+    hasVerification ||
+    financialAction;
+
+  if (riskScore >= 70) return ThreatLevel.MALICIOUS;
+  if (riskScore >= 30) return ThreatLevel.SUSPICIOUS;
+  if (heuristicThreat) return ThreatLevel.SUSPICIOUS;
+  return ThreatLevel.SAFE;
 };
 
 const ensureExplanations = (raw: unknown): string[] => {
-  if (Array.isArray(raw)) {
-    const cleaned = raw.filter(Boolean).map(value => String(value));
-    return cleaned.length ? cleaned : ['No explanation provided'];
-  }
-  if (typeof raw === 'string' && raw.trim()) return [raw.trim()];
+  if (Array.isArray(raw)) return raw.map(String);
+  if (typeof raw === 'string') return [raw];
   return ['No explanation provided'];
+};
+
+const normalizeStringList = (value: unknown): string[] => {
+  if (Array.isArray(value)) return value.map(String).filter(Boolean);
+  if (typeof value === 'string' && value.trim()) return [value.trim()];
+  return [];
+};
+
+const normalizeExploitationChain = (value: unknown): string[] => {
+  if (Array.isArray(value)) return value.map(String).filter(Boolean);
+  if (typeof value === 'string') {
+    return value
+      .split(/→|->|\n|,/)
+      .map((step) => step.trim())
+      .filter(Boolean);
+  }
+  return [];
+};
+
+const buildRedTeamExplanations = (data: any): string[] => {
+  const tactics = normalizeStringList(data?.redteam_analysis?.psychological_tactics);
+  const chain = normalizeExploitationChain(data?.redteam_analysis?.exploitation_chain);
+  const detectionNotes = normalizeStringList(data?.detection?.explanations);
+  const combined = [...tactics, ...chain];
+  return combined.length ? combined : detectionNotes.length ? detectionNotes : ensureExplanations(data?.explanation);
 };
 
 const buildRedTeamReport = ({
   type,
+  content,
   explanations,
-  isThreat,
   riskScore,
 }: {
   type: ScanType;
+  content: string;
   explanations: string[];
-  isThreat: boolean;
   riskScore: number;
 }): RedTeamReport => {
-  const attackGoalMap: Record<ScanType, string> = {
-    [ScanType.TEXT]: 'Social engineering / credential theft',
-    [ScanType.EMAIL]: 'Business email compromise',
-    [ScanType.URL]: 'Malicious landing page redirection',
-    [ScanType.IMAGE]: 'Visual spoofing / forged artifacts',
-  };
+  const text = content.toLowerCase();
+  const hasBanking = /bank|upi|account|card|credit|debit|kyc|otp|transaction|payment|refund|wallet|netbank|ifsc/.test(text);
+  const hasJobs = /job|hiring|recruit|interview|resume|offer|salary|hr|work from home|freelance/.test(text);
+  const hasLogin = /login|signin|sign in|password|verify|2fa|otp|code|auth|credential|reset/.test(text);
+  const hasCrypto = /crypto|bitcoin|btc|eth|wallet|airdrop|token|staking|nft/.test(text);
+  const hasGov = /government|tax|irs|police|court|passport|visa|uid|aadhaar/.test(text);
+  const hasDelivery = /delivery|parcel|shipment|courier|tracking|customs/.test(text);
+  const hasRomance = /love|dating|relationship|urgent help|emergency|hospital/.test(text);
+  const hasSupport = /support|helpdesk|account locked|suspended|security alert/.test(text);
+  const hasReward = /winner|prize|free|reward|gift/.test(text);
+  const hasScarcity = /limited|only today|last chance|exclusive/.test(text);
+  const hasUrgency = /urgent|immediately|now|expire/.test(text);
+  const hasAuthority = /government|bank|police|irs|support|security/.test(text);
+  const hasFear = /suspended|locked|unauthorized|fraud/.test(text);
+  const hasTrustAbuse = /verify|secure|confirm/.test(text);
 
-  const victimProfileMap: Record<ScanType, string> = {
-    [ScanType.TEXT]: 'Messaging or chat recipient',
-    [ScanType.EMAIL]: 'Corporate email user',
-    [ScanType.URL]: 'End user browsing a suspicious domain',
-    [ScanType.IMAGE]: 'User verifying visual evidence',
-  };
+  const psychology: string[] = [];
+  if (hasUrgency) psychology.push('urgency');
+  if (hasFear) psychology.push('fear');
+  if (hasAuthority) psychology.push('authority');
+  if (hasReward) psychology.push('reward');
+  if (hasScarcity) psychology.push('scarcity');
+  if (hasTrustAbuse) psychology.push('trust abuse');
 
-  const primaryInsight = explanations[0] || 'No specific tactic detected';
+  const victimProfile = (() => {
+    if (type === ScanType.IMAGE) return 'Social media audience / public figures';
+    if (hasBanking) return 'Bank users and cardholders';
+    if (hasJobs) return 'Job seekers';
+    if (hasCrypto) return 'Crypto users and traders';
+    if (hasGov) return 'Citizens targeted by government impersonation';
+    if (hasDelivery) return 'E-commerce shoppers';
+    if (hasRomance) return 'Individuals targeted for emotional manipulation';
+    if (hasSupport) return 'Account holders seeking support';
+    if (hasLogin) return 'Online account holders';
+    if (type === ScanType.EMAIL) return 'Corporate employees';
+    if (type === ScanType.URL) return 'Web users';
+    return 'General public';
+  })();
+
+  const attackGoal = (() => {
+    if (hasLogin || hasTrustAbuse) return 'Credential theft';
+    if (hasBanking || /payment|refund|transfer/.test(text)) return 'Financial fraud';
+    if (type === ScanType.IMAGE) return 'Impersonation or misinformation';
+    if (/download|attachment|invoice/.test(text)) return 'Malware delivery';
+    return 'Impersonation / social engineering';
+  })();
+
+  const killChain = [
+    'Initial lure',
+    'Trust building',
+    hasUrgency ? 'Urgency trigger' : 'Motivation trigger',
+    hasLogin || /http/.test(text) ? 'Redirection or payload' : 'Engagement step',
+    attackGoal === 'Credential theft' ? 'Credential capture' : 'Data theft or fraud',
+  ];
+
+  const psychologyExploited = psychology[0] || explanations[0] || 'trust abuse';
+  const exploitationChain = explanations.length ? explanations : killChain;
 
   return {
-    attackGoal: isThreat ? attackGoalMap[type] : 'Benign communication',
-    victimProfile: victimProfileMap[type],
-    psychologyExploited: isThreat ? primaryInsight : 'No social engineering patterns detected',
-    exploitationChain: explanations,
-    nextMoves: isThreat
-      ? 'Isolate channel, alert SOC, and educate the impacted user'
-      : 'Log scan and continue monitoring',
-    confidenceScore: clamp(isThreat ? Math.max(riskScore, 60) : Math.min(riskScore, 40)),
+    attackGoal,
+    victimProfile,
+    psychologyExploited,
+    exploitationChain,
+    nextMoves:
+      riskScore > 45
+        ? 'Isolate, block sender, notify SOC'
+        : riskScore > 25
+        ? 'Warn user and monitor'
+        : 'Log and continue',
+    confidenceScore: clamp(riskScore),
   };
 };
 
 const buildCyberDNA = ({
-  content = '',
-  type,
+  content,
   explanations,
-  isThreat,
   riskScore,
-  fingerprintSource,
+  type,
 }: {
-  content?: string;
-  type: ScanType;
+  content: string;
   explanations: string[];
-  isThreat: boolean;
   riskScore: number;
-  fingerprintSource?: string;
+  type: ScanType;
 }): CyberDNA => {
-  const urgencyPattern = /(urgent|immediately|act now|expire|today|limited)/i;
-  const impersonationPattern = /(account|bank|upi|paytm|sbi|icici|government|amazon|google|verify|security)/i;
-  const obfuscationPattern = /(https?:\/|bit\.ly|tinyurl|@|login|secure|verify)/i;
-  const riskyTldPattern = /\.(zip|xyz|ru|cn|top|tk|gq|ml|info|click)(?:\/|$)/i;
+  const text = content.toLowerCase();
+  const tokens = text.match(/[\w@.-]+/g) || [];
+  const wordCount = Math.max(1, tokens.length);
+  const charCount = Math.max(1, text.length);
 
-  const base = isThreat ? 70 : 25;
-  const toScore = (condition: boolean, emphasis = 20) => clamp(base + (condition ? emphasis : -10), 5, 95);
+  const scamKeywordHits = (text.match(/verify|secure|bank|account|password|login|otp|code|payment|refund|urgent|prize|winner|click/gi) || []).length;
+  const linguistics = clamp((scamKeywordHits / wordCount) * 200);
 
-  let urgency = type === ScanType.IMAGE ? 35 : toScore(urgencyPattern.test(content));
-  let impersonation = toScore(impersonationPattern.test(content));
-  let obfuscation = toScore(obfuscationPattern.test(content));
-  let visual = type === ScanType.IMAGE ? clamp(riskScore, 30, 95) : clamp(base - 5, 15, 80);
+  const urgencyHits = (text.match(/urgent|immediately|expire|now/gi) || []).length;
+  const urgency = clamp((urgencyHits / wordCount) * 300);
 
-  if (type === ScanType.URL) {
-    const httpsMissing = !content.startsWith('https://');
-    const manyDots = (content.match(/\./g) || []).length > 3;
-    urgency = toScore(false, 10);
-    impersonation = toScore(/login|secure|account|bank|verify/i.test(content));
-    obfuscation = clamp(base + (httpsMissing ? 25 : 0) + (manyDots ? 15 : 0) + (riskyTldPattern.test(content) ? 20 : 0), 5, 95);
-    visual = clamp(base, 10, 55);
-  }
+  const impersonationHits = (text.match(/bank|google|amazon|govt|government|upi/gi) || []).length;
+  const impersonation = clamp((impersonationHits / wordCount) * 300);
 
-  if (type === ScanType.IMAGE) {
-    impersonation = clamp(base + 15, 10, 95);
-    obfuscation = clamp(base, 5, 70);
-  }
+  const shortenerHits = (text.match(/bit\.ly|tinyurl|t\.co|goo\.gl/gi) || []).length;
+  const dotHits = (text.match(/\./g) || []).length;
+  const suspiciousTldHits = (text.match(/\.(ru|cn|tk|ml|ga|cf|gq|top|xyz)(\b|\/)/gi) || []).length;
+  const obfuscationSignals = shortenerHits * 3 + suspiciousTldHits * 2 + dotHits / Math.max(10, charCount);
+  const obfuscation = clamp((obfuscationSignals / Math.max(3, wordCount)) * 100);
 
-  const fingerprint = createFingerprint(
-    fingerprintSource || content || explanations.join('|') || new Date().toISOString()
-  );
+  const intent = clamp(riskScore);
+  const visual = type === ScanType.IMAGE ? clamp(riskScore) : 0;
 
   return {
-    linguistics: clamp(base + explanations.length * 3, 10, 95),
+    linguistics,
     urgency,
     impersonation,
     obfuscation,
     visual,
-    intent: clamp(isThreat ? Math.max(riskScore, base + 10) : Math.min(riskScore / 2, 40)),
-    fingerprintHash: fingerprint,
+    intent,
+    fingerprintHash: createFingerprint(content + explanations.join('|')),
     similarCampaigns: [],
   };
 };
@@ -166,7 +219,7 @@ const buildScanResult = ({
   threatLevel,
   redTeamReport,
   cyberDNA,
-}: ScanBuilderInput): ScanResult => ({
+}: any): ScanResult => ({
   id: generateId(),
   userId,
   timestamp: new Date().toISOString(),
@@ -179,64 +232,52 @@ const buildScanResult = ({
   status: 'completed',
 });
 
-const formatSnippet = (text: string, fallback: string) => {
-  const cleaned = text?.trim();
-  if (!cleaned) return fallback;
-  return cleaned.length > 140 ? `${cleaned.slice(0, 140)}...` : cleaned;
-};
-
-const analyzeTextOrEmail = async (
-  type: ScanType.TEXT | ScanType.EMAIL,
-  content: string,
-  userId: string
-): Promise<ScanResult> => {
-  const response = await fetch(`${TEXT_API_URL}/detect-text`, {
+const analyzeText = async (content: string, userId: string): Promise<ScanResult> => {
+  const response = await fetch(`${API_BASE}/scan/text`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text: content }),
   });
 
-  if (!response.ok) {
-    throw new Error(`Text analyzer error: ${response.status}`);
-  }
-
   const data = await response.json();
-  const riskScore = toRiskScore(data.confidence);
-  const explanations = ensureExplanations(data.explanation);
-  const threatLevel = normalizeThreatLevel(data.risk_level, Boolean(data.is_scam), riskScore);
+  const detection = data?.detection ?? data;
+  const riskScore = toRiskScore(detection?.risk_score ?? data?.risk_score);
+  const explanations = buildRedTeamExplanations(data);
+  const threatLevel = normalizeThreatLevel(detection?.label ?? data?.label, riskScore, content);
 
   return buildScanResult({
-    type,
+    type: ScanType.TEXT,
     userId,
-    contentSnippet: formatSnippet(content, type === ScanType.EMAIL ? 'Email submission' : 'Text submission'),
+    contentSnippet: content,
     riskScore,
     threatLevel,
-    redTeamReport: buildRedTeamReport({ type, explanations, isThreat: Boolean(data.is_scam), riskScore }),
+    redTeamReport: buildRedTeamReport({
+      type: ScanType.TEXT,
+      content,
+      explanations,
+      riskScore,
+    }),
     cyberDNA: buildCyberDNA({
       content,
-      type,
       explanations,
-      isThreat: Boolean(data.is_scam),
       riskScore,
+      type: ScanType.TEXT,
     }),
   });
 };
 
 const analyzeUrl = async (url: string, userId: string): Promise<ScanResult> => {
-  const response = await fetch(`${URL_API_URL}/detect-url`, {
+  const response = await fetch(`${API_BASE}/scan/url`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ url }),
   });
 
-  if (!response.ok) {
-    throw new Error(`URL analyzer error: ${response.status}`);
-  }
-
   const data = await response.json();
-  const riskScore = toRiskScore(data.confidence);
-  const explanations = ensureExplanations(data.explanation);
-  const threatLevel = normalizeThreatLevel(data.risk_level, Boolean(data.is_phishing), riskScore);
+  const detection = data?.detection ?? data;
+  const riskScore = toRiskScore(detection?.risk_score ?? data?.risk_score);
+  const explanations = buildRedTeamExplanations(data);
+  const threatLevel = normalizeThreatLevel(detection?.label ?? data?.label, riskScore, url);
 
   return buildScanResult({
     type: ScanType.URL,
@@ -246,71 +287,56 @@ const analyzeUrl = async (url: string, userId: string): Promise<ScanResult> => {
     threatLevel,
     redTeamReport: buildRedTeamReport({
       type: ScanType.URL,
+      content: url,
       explanations,
-      isThreat: Boolean(data.is_phishing),
       riskScore,
     }),
     cyberDNA: buildCyberDNA({
       content: url,
-      type: ScanType.URL,
       explanations,
-      isThreat: Boolean(data.is_phishing),
       riskScore,
+      type: ScanType.URL,
     }),
   });
 };
 
-const analyzeImage = async (imageData: string | undefined, userId: string): Promise<ScanResult> => {
-  if (!imageData) {
-    throw new Error('Image data missing for analysis');
-  }
+const stripDataUrl = (dataUrl: string): string => {
+  const match = dataUrl.match(/^data:.*?;base64,(.*)$/i);
+  return match ? match[1] : dataUrl;
+};
 
-  const base64Payload = imageData.includes(',') ? imageData.split(',')[1] : imageData;
-  if (!base64Payload) {
-    throw new Error('Unable to read uploaded image');
-  }
+const analyzeImage = async (imageDataUrl: string, userId: string): Promise<ScanResult> => {
+  const image_base64 = stripDataUrl(imageDataUrl);
 
-  const response = await fetch(`${IMAGE_API_URL}/detect-image`, {
+  const response = await fetch(`${API_BASE}/scan/image`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ image_base64: base64Payload }),
+    body: JSON.stringify({ image_base64 }),
   });
 
-  if (!response.ok) {
-    throw new Error(`Image analyzer error: ${response.status}`);
-  }
-
   const data = await response.json();
-  const riskScore = toRiskScore(data.confidence);
-  const isThreat = Boolean(data.is_fake);
-
-  const explanations = ensureExplanations(
-    data.hf_primary?.label
-      ? `Model detected pattern: ${data.hf_primary.label}`
-      : data.risk_level || (isThreat ? 'Possible forgery detected' : 'No visual anomalies detected')
-  );
-
-  const threatLevel = normalizeThreatLevel(data.risk_level, isThreat, riskScore);
+  const detection = data?.detection ?? data;
+  const riskScore = toRiskScore(detection?.risk_score ?? data?.risk_score);
+  const explanations = buildRedTeamExplanations(data);
+  const threatLevel = normalizeThreatLevel(detection?.label ?? data?.label, riskScore, 'image');
 
   return buildScanResult({
     type: ScanType.IMAGE,
     userId,
-    contentSnippet: 'Uploaded forensic artifact',
+    contentSnippet: 'Image scan',
     riskScore,
     threatLevel,
     redTeamReport: buildRedTeamReport({
       type: ScanType.IMAGE,
+      content: 'image',
       explanations,
-      isThreat,
       riskScore,
     }),
     cyberDNA: buildCyberDNA({
-      content: '',
-      type: ScanType.IMAGE,
+      content: 'image',
       explanations,
-      isThreat,
       riskScore,
-      fingerprintSource: data.image_id || data.reference || JSON.stringify(data),
+      type: ScanType.IMAGE,
     }),
   });
 };
@@ -318,19 +344,10 @@ const analyzeImage = async (imageData: string | undefined, userId: string): Prom
 export const analyzeContent = async (
   type: ScanType,
   content: string,
-  userId: string,
-  imageData?: string
+  userId: string
 ): Promise<ScanResult> => {
-  switch (type) {
-    case ScanType.TEXT:
-      return analyzeTextOrEmail(ScanType.TEXT, content, userId);
-    case ScanType.EMAIL:
-      return analyzeTextOrEmail(ScanType.EMAIL, content, userId);
-    case ScanType.URL:
-      return analyzeUrl(content, userId);
-    case ScanType.IMAGE:
-      return analyzeImage(imageData, userId);
-    default:
-      throw new Error(`Unsupported scan type: ${type}`);
-  }
+  if (type === ScanType.TEXT) return analyzeText(content, userId);
+  if (type === ScanType.URL) return analyzeUrl(content, userId);
+  if (type === ScanType.IMAGE) return analyzeImage(content, userId);
+  throw new Error('Unsupported type');
 };

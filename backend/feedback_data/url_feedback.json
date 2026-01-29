@@ -178,5 +178,17 @@
     "created_at": "2026-01-23T13:48:01.344843",
     "last_predicted": "2026-01-23T13:48:01.344843",
     "user_ip": "127.0.0.1"
+  },
+  {
+    "url": "www.paytm.com\n",
+    "model_prediction": "phishing",
+    "confidence": 0.92,
+    "source": "local",
+    "user_reports": [],
+    "status": "pending",
+    "prediction_count": 1,
+    "created_at": "2026-01-29T16:42:40.778246",
+    "last_predicted": "2026-01-29T16:42:40.778246",
+    "user_ip": "127.0.0.1"
   }
 ]

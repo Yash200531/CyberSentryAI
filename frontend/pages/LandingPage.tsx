@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Lock, Cpu, ArrowRight, Radar } from 'lucide-react';
+import Logo from '../components/Logo';
 
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -9,10 +10,7 @@ const LandingPage: React.FC = () => {
     <div className="min-h-screen bg-cyber-dark text-white cyber-grid overflow-hidden relative">
       {/* Navbar */}
       <nav className="relative z-10 px-6 py-6 flex justify-between items-center max-w-7xl mx-auto">
-        <div className="flex items-center gap-2">
-          <Shield className="w-8 h-8 text-cyber-primary" />
-          <span className="font-display font-bold text-xl tracking-widest">CYBER<span className="text-cyber-primary">SENTRY</span>AI</span>
-        </div>
+        <Logo size="medium" text="CYBERSENTRYAI" />
         <button 
           onClick={() => navigate('/login')}
           className="px-6 py-2 border border-cyber-primary text-cyber-primary hover:bg-cyber-primary hover:text-black font-display font-bold tracking-wide rounded transition-all shadow-[0_0_10px_rgba(6,182,212,0.4)]"

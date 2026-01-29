@@ -9,6 +9,7 @@ export const setAuthTokenGetter = (fn: () => string | null) => {
 const http = axios.create({
   baseURL: import.meta.env.VITE_API_BASE || 'http://localhost:5003',
   withCredentials: true,
+  timeout: 10000, // 10s - fail fast on unresponsive backend
 });
 
 http.interceptors.request.use((config) => {

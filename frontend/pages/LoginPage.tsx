@@ -1,20 +1,25 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
-import { ShieldCheck, User as UserIcon } from 'lucide-react';
+import { User as UserIcon } from 'lucide-react';
+import Logo from '../components/Logo';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('analyst@corp.com');
   const [password, setPassword] = useState('analyst123');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
     const success = await login(email, password);
     if (success) {
       // Default redirect to New Scan page as per requirements
       navigate('/app/scan');
+    } else {
+      setErrorMessage('Invalid credentials. Please try again.');
     }
   };
 
@@ -26,13 +31,18 @@ const LoginPage: React.FC = () => {
       <div className="w-full max-w-md glass-panel p-8 rounded-2xl border border-cyber-border shadow-2xl relative z-10">
         <div className="flex flex-col items-center mb-8">
           <div className="w-16 h-16 bg-cyber-primary/20 rounded-full flex items-center justify-center mb-4 border border-cyber-primary/50">
-            <ShieldCheck className="w-8 h-8 text-cyber-primary" />
+            <Logo size="small" showText={false} />
           </div>
           <h2 className="text-2xl font-bold text-white tracking-wider">SECURE LOGIN</h2>
           <p className="text-cyber-muted text-sm mt-2">Enter credentials to access the grid</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {errorMessage && (
+            <div className="rounded border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300 font-mono">
+              {errorMessage}
+            </div>
+          )}
           <div>
             <label htmlFor="login-email" className="block text-xs font-mono text-cyber-primary mb-2 uppercase tracking-widest">Identifier</label>
             <div className="relative">
@@ -72,12 +82,6 @@ const LoginPage: React.FC = () => {
             {isLoading ? 'AUTHENTICATING...' : 'INITIALIZE SESSION'}
           </button>
         </form>
-
-        <div className="mt-6 text-center text-xs text-gray-500 space-y-1">
-          <p>Demo credentials:</p>
-          <p className="text-cyber-primary">analyst@corp.com / analyst123</p>
-          <p className="text-cyber-primary">admin@cybersentry.ai / admin123</p>
-        </div>
       </div>
     </div>
   );

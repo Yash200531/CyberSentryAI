@@ -1,7 +1,8 @@
 import React from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
-import { ShieldAlert, LayoutDashboard, Search, History, LogOut, Info, Users, Settings } from 'lucide-react';
+import { LayoutDashboard, Search, History, LogOut, Info, Users, Settings } from 'lucide-react';
+import Logo from './Logo';
 
 const Layout: React.FC = () => {
   const { user, logout } = useAuth();
@@ -23,8 +24,7 @@ const Layout: React.FC = () => {
       {/* Increased z-index to z-50 to ensure it floats above all main content overlays, charts, and animations */}
       <aside className="w-64 fixed inset-y-0 left-0 glass-panel z-50 hidden md:flex flex-col border-r border-cyber-border shadow-[4px_0_24px_rgba(0,0,0,0.4)]">
         <div className="h-16 flex items-center px-6 border-b border-cyber-border bg-cyber-panel/50 backdrop-blur-md">
-          <ShieldAlert className="w-8 h-8 text-cyber-primary mr-3" />
-          <span className="font-bold text-lg tracking-wider text-white">CYBER<span className="text-cyber-primary">SENTRY</span></span>
+          <Logo size="medium" />
         </div>
 
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto custom-scrollbar">
@@ -74,10 +74,10 @@ const Layout: React.FC = () => {
       {/* Main Content */}
       <main className="flex-1 md:ml-64 relative min-h-screen z-0">
         {/* Mobile Header (Simplified) */}
-        <header className="md:hidden h-16 glass-panel flex items-center justify-between px-4 sticky top-0 z-40 border-b border-cyber-border">
-           <ShieldAlert className="w-8 h-8 text-cyber-primary" />
-           <button onClick={handleLogout} className="text-cyber-muted"><LogOut size={20} /></button>
-        </header>
+          <header className="md:hidden h-16 glass-panel flex items-center justify-between px-4 sticky top-0 z-40 border-b border-cyber-border">
+            <Logo size="small" showText={false} />
+            <button onClick={handleLogout} className="text-cyber-muted"><LogOut size={20} /></button>
+          </header>
 
         <div className="p-6 max-w-7xl mx-auto pb-20">
           <Outlet />

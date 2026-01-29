@@ -39,8 +39,7 @@ const ScanPage: React.FC = () => {
       const result = await analyzeContent(
         activeTab,
         inputContent,
-        user.id,
-        previewUrl || undefined
+        user.id
       );
 
       await saveScan(result);

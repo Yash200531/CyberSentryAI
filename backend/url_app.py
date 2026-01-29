@@ -6,54 +6,21 @@ import pickle
 import urllib.error
 import urllib.request
 from feedback_db import FeedbackDB
+from hf_client import get_hf_client
+from cyber_dna_engine import CyberDNAEngine
+from redteam_engine import RedTeamEngine
 
 app = Flask(__name__)
 CORS(app)
 
-# Initialize feedback database
+# Initialize intelligent engines
 feedback_db = FeedbackDB()
+hf_client = get_hf_client()
+cyber_dna = CyberDNAEngine()
+redteam = RedTeamEngine()
 
 with open("models/url_phishing_model.pkl", "rb") as f:
     model = pickle.load(f)
-
-HF_MODEL = os.getenv("HF_URL_MODEL", "mrm8488/bert-tiny-finetuned-sms-spam-detection")
-HF_API_URL = f"https://api-inference.huggingface.co/models/{HF_MODEL}"
-HF_API_TOKEN = os.getenv("HF_API_TOKEN")
-HF_TIMEOUT = float(os.getenv("HF_TIMEOUT", "10"))
-
-
-def hf_classify_url(url: str):
-    if not HF_API_TOKEN:
-        return None
-    payload = json.dumps({"inputs": url}).encode("utf-8")
-    req = urllib.request.Request(
-        HF_API_URL,
-        data=payload,
-        headers={
-            "Authorization": f"Bearer {HF_API_TOKEN}",
-            "Content-Type": "application/json",
-        },
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=HF_TIMEOUT) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-    except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, ValueError):
-        return None
-
-    if isinstance(data, dict) and data.get("error"):
-        return None
-
-    if isinstance(data, list) and data and isinstance(data[0], list):
-        data = data[0]
-
-    if isinstance(data, list) and data:
-        best = max(data, key=lambda item: item.get("score", 0))
-        label = str(best.get("label", "")).lower()
-        score = float(best.get("score", 0))
-        is_phish = any(key in label for key in ("spam", "scam", "phishing"))
-        return {"label": label, "score": score, "is_phishing": is_phish}
-
-    return None
 
 @app.route("/")
 def home():
@@ -61,11 +28,17 @@ def home():
 
 @app.route("/detect-url", methods=["POST"])
 def detect_url():
+    """
+    Hybrid AI URL detection endpoint
+    Priority: HF Primary → Local Fallback → CyberDNA → RedTeam
+    """
     url = request.json.get("url","").lower()
     user_ip = request.remote_addr
 
-    hf_result = hf_classify_url(url) if HF_API_TOKEN else None
+    # === STEP 1: Try Hugging Face First (Primary Intelligence) ===
+    hf_result = hf_client.classify_url(url)
 
+    # === STEP 2: Local Heuristics (Always run as verification/fallback) ===
     reasons = []
 
     if not url.startswith("https"):
@@ -79,45 +52,101 @@ def detect_url():
     if any(w in url for w in ["login","verify","secure","bank","upi","paytm","sbi","account"]):
         reasons.append("Contains financial keywords")
 
-    if hf_result:
-        reasons.append("Local heuristic checks used for verification")
-
     local_pred = len(reasons) >= 2
     local_prob = 0.92 if local_pred else 0.05
 
+    # === STEP 3: Determine Primary Result ===
     if hf_result:
+        # HF success - use as primary
         is_phishing = bool(hf_result["is_phishing"])
-        prob = float(hf_result["score"])
+        prob = float(hf_result["confidence"])
         source = "huggingface"
+        primary_label = hf_result.get("label", "unknown")
     else:
+        # HF failed - fallback to local
         is_phishing = bool(local_pred)
         prob = float(local_prob)
-        source = "local"
+        source = "local_fallback"
+        primary_label = "phishing" if is_phishing else "safe"
 
-    # Store prediction in feedback database for adaptive learning
+    # === STEP 4: Build Base Scan Result ===
+    scan_result = {
+        "is_phishing": is_phishing,
+        "score": prob,
+        "url": url
+    }
+
+    # === STEP 5: CyberDNA Analysis (Always Run) ===
+    try:
+        cyber_dna_result = cyber_dna.generate_dna(
+            content=url,
+            content_type="url",
+            scan_result=scan_result,
+            redteam_result=None
+        )
+    except Exception as e:
+        cyber_dna_result = None
+        print(f"CyberDNA error: {e}")
+
+    # === STEP 6: RedTeam Analysis (Always Run) ===
+    try:
+        redteam_result = redteam.analyze_url(url, scan_result)
+    except Exception as e:
+        redteam_result = None
+        print(f"RedTeam error: {e}")
+
+    # === STEP 7: Add model agreement to explanations ===
+    if hf_result and local_pred is not None:
+        if hf_result["is_phishing"] == bool(local_pred):
+            reasons.append("✓ Local heuristics agree with HF primary")
+        else:
+            reasons.append("⚠ Local heuristics disagree with HF primary")
+
+    # === STEP 8: Store in Feedback Database ===
     feedback_db.add_url_prediction(url, is_phishing, prob, user_ip, source=source)
 
+    # === STEP 9: Build Hybrid Response ===
     response = {
         "url": url,
         "is_phishing": is_phishing,
-        "confidence": prob,
-        "risk_level": "High Risk" if is_phishing else "Low Risk",
+        "confidence": round(prob, 3),
+        "risk_level": "High Risk" if prob > 0.45 else "Medium Risk" if prob > 0.25 else "Low Risk",
         "explanation": reasons,
-        "note": "HF primary with local heuristic verification" if source == "huggingface" else "Random Forest + Explainable AI trained on PhiUSIIL dataset",
         "source": source,
-    }
+        "architecture": "hybrid_ai",
 
-    if hf_result:
-        response["hf_primary"] = {
-            "is_phishing": hf_result["is_phishing"],
-            "confidence": round(hf_result["score"], 3),
-            "label": hf_result["label"],
-            "model": HF_MODEL,
-        }
+        # Hugging Face Primary Results
+        "hf_primary": {
+            "available": hf_result is not None,
+            "is_phishing": hf_result["is_phishing"] if hf_result else None,
+            "confidence": round(hf_result["confidence"], 3) if hf_result else None,
+            "label": hf_result.get("label") if hf_result else None,
+            "model": hf_client.url_model if hf_result else None
+        } if hf_result else {
+            "available": False,
+            "reason": "API unavailable or timeout"
+        },
 
-    response["local_verification"] = {
-        "is_phishing": bool(local_pred),
-        "confidence": round(float(local_prob), 3),
+        # Local Heuristic Verification
+        "local_verification": {
+            "is_phishing": bool(local_pred),
+            "confidence": round(float(local_prob), 3),
+            "method": "Heuristic rules + PhiUSIIL patterns"
+        },
+
+        # CyberDNA Fingerprint
+        "cyber_dna": cyber_dna_result if cyber_dna_result else {
+            "available": False,
+            "reason": "Analysis failed"
+        },
+
+        # RedTeam Intelligence
+        "redteam": redteam_result if redteam_result else {
+            "available": False,
+            "reason": "Analysis failed"
+        },
+
+        "note": f"Hybrid AI: {'HF primary + local verification + CyberDNA + RedTeam' if hf_result else 'Local fallback + CyberDNA + RedTeam'}"
     }
 
     return jsonify(response)
