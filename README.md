@@ -7,7 +7,6 @@
 ✅ **Red-Team AI** - Attacker psychology and intent analysis  
 ✅ **Cyber DNA Fingerprinting** - Threat similarity detection & lineage tracking  
 ✅ **Unified FastAPI Backend** - Single API for all detection types  
-✅ **100% Hugging Face** - No Gemini, all production-ready models  
 ✅ **Complete Logging** - JSONL audit trail with export capabilities  
 ✅ **Performance Optimized** - Async operations, caching, <3s response times  
 
