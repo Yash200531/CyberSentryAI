@@ -5,8 +5,8 @@ import { User as UserIcon } from 'lucide-react';
 import Logo from '../components/Logo';
 
 const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState('analyst@corp.com');
-  const [password, setPassword] = useState('analyst123');
+  const [email, setEmail] = useState('analyst@ji.ai');
+  const [password, setPassword] = useState('Sw@gtm!1');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
@@ -54,7 +54,7 @@ const LoginPage: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-black/40 border border-cyber-border rounded px-10 py-3 text-white focus:outline-none focus:border-cyber-primary transition-colors"
-                placeholder="analyst@corp.com"
+                placeholder="analyst@ji.ai"
                 autoComplete="username"
               />
             </div>

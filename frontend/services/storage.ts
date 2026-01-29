@@ -18,7 +18,7 @@ const initStorage = () => {
     const user: User = {
       id: 'user-1',
       username: 'SecAnalyst',
-      email: 'analyst@corp.com',
+      email: 'analyst@ji.ai',
       role: UserRole.USER,
       avatarUrl: 'https://picsum.photos/id/3/200/200'
     };
