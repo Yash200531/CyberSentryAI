@@ -9,6 +9,7 @@
 ✅ **Unified FastAPI Backend** - Single API for all detection types  
 ✅ **Complete Logging** - JSONL audit trail with export capabilities  
 ✅ **Performance Optimized** - Async operations, caching, <3s response times  
+✅ **OTP Email Verification** - Secure email-based authentication for all users  
 
 ---
 
@@ -47,6 +48,18 @@ copy .env.example .env  # Windows
 ```bash
 HF_API_TOKEN=hf_YourActualTokenHere
 ```
+
+**Optional - Email Verification (Recommended):**
+```bash
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your_email@gmail.com
+SMTP_PASSWORD=your_app_password
+FROM_EMAIL=your_email@gmail.com
+```
+
+> **Note:** Email verification works in development mode without SMTP configuration.
+> OTP codes will be printed to the console for testing. See [OTP_VERIFICATION_GUIDE.md](OTP_VERIFICATION_GUIDE.md) for details.
 
 ### 4. Run the Server
 
