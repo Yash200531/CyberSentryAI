@@ -6,6 +6,7 @@
 
 ✅ **Red-Team AI** - Attacker psychology and intent analysis  
 ✅ **Cyber DNA Fingerprinting** - Threat similarity detection & lineage tracking  
+✅ **Fraud Recovery Assistant** - AI-powered recovery guidance for cyber threat victims ⭐ NEW  
 ✅ **Unified FastAPI Backend** - Single API for all detection types  
 ✅ **Complete Logging** - JSONL audit trail with export capabilities  
 ✅ **Performance Optimized** - Async operations, caching, <3s response times  
@@ -67,6 +68,8 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
 ## 📡 API Endpoints
 
+### Threat Detection
+
 ### Scan Text/SMS
 ```bash
 POST /scan/text
@@ -107,6 +110,45 @@ POST /scan/email
   "enable_redteam": true,
   "enable_dna": true
 }
+```
+
+### Fraud Recovery Assistant ⭐ NEW
+
+### Generate Recovery Plan
+```bash
+POST /recovery/analyze
+{
+  "threat_data": {
+    "scan_id": "abc123",
+    "detection": { "is_threat": true, "confidence": 85.5, "label": "phishing" },
+    "redteam_analysis": { "attack_goal": "Credential theft", "severity": 8 }
+  }
+}
+```
+
+### Track Recovery Progress
+```bash
+POST /recovery/track
+{
+  "session_id": "recovery_session_id",
+  "step_number": 1,
+  "status": "completed"
+}
+```
+
+### Generate Recovery Report
+```bash
+POST /recovery/report
+{
+  "session_id": "recovery_session_id",
+  "recovery_plan": { ... },
+  "completed_steps": [1, 2, 3]
+}
+```
+
+### Get Threat Guidance
+```bash
+GET /recovery/guidance/phishing
 ```
 
 ### Analytics
@@ -210,6 +252,19 @@ Creates unique "DNA" for each threat:
 - **DNA Hash:** Unique fingerprint identifier
 - **Similarity Matching:** Find related threats (cosine similarity)
 - **Same-Actor Probability:** Likelihood threats share same source
+
+### Fraud Recovery Assistant ⭐ NEW
+AI-powered recovery guidance for cyber threat victims:
+- **Personalized Recovery Plans:** Tailored to specific threat type (phishing, scam, malware, identity theft, financial fraud)
+- **Step-by-Step Guidance:** Clear, actionable recovery steps with priority levels
+- **Progress Tracking:** Mark steps as completed, in-progress, or skipped
+- **AI-Powered Advice:** Context-aware recommendations using HuggingFace models
+- **Formal Reports:** Generate reports for law enforcement and financial institutions
+- **Educational Resources:** Prevention tips and emergency contacts
+- **Urgency Prioritization:** Critical, high, medium, low based on threat severity
+- **Seamless Integration:** Direct access from threat detection reports
+
+**See [FRAUD_RECOVERY_ASSISTANT.md](FRAUD_RECOVERY_ASSISTANT.md) for complete documentation.**
 
 ### Unified Logging
 Every scan is logged to `backend/logs/`:
