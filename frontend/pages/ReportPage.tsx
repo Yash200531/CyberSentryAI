@@ -40,7 +40,7 @@ const ReportPage: React.FC = () => {
                                 detection: {
                                     is_threat: true,
                                     confidence: scan.riskScore,
-                                    label: scan.threatLevel.toLowerCase()
+                                    label: scan.threatLevel?.toLowerCase() || 'unknown'
                                 },
                                 redteam_analysis: {
                                     attack_goal: scan.redTeamReport.attackGoal,

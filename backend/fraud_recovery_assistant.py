@@ -9,7 +9,7 @@ import urllib.error
 import urllib.request
 from typing import Dict, Any, List, Optional
 from datetime import datetime
-import hashlib
+import uuid
 
 
 class FraudRecoveryAssistant:
@@ -313,10 +313,12 @@ Keep the advice practical, empathetic, and under 200 words.
     
     def _generate_session_id(self, threat_data: Dict[str, Any]) -> str:
         """Generate unique session ID for recovery tracking"""
+        import uuid
         scan_id = threat_data.get("scan_id", "")
         timestamp = datetime.utcnow().isoformat()
-        raw = f"{scan_id}{timestamp}"
-        return hashlib.md5(raw.encode()).hexdigest()[:16]
+        # Use UUID5 for deterministic generation based on scan_id and timestamp
+        namespace = uuid.NAMESPACE_DNS
+        return str(uuid.uuid5(namespace, f"{scan_id}{timestamp}"))[:16]
     
     def update_progress(self, session_id: str, step_number: int, status: str = "completed") -> Dict[str, Any]:
         """

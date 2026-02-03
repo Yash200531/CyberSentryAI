@@ -206,7 +206,9 @@ const FraudRecoveryPage: React.FC = () => {
     );
   }
 
-  const progressPercentage = (completedSteps.length / recoveryPlan.recovery_steps.length) * 100;
+  const progressPercentage = recoveryPlan.recovery_steps.length > 0 
+    ? (completedSteps.length / recoveryPlan.recovery_steps.length) * 100 
+    : 0;
 
   return (
     <div className="space-y-8">
