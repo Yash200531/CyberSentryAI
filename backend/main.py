@@ -28,6 +28,7 @@ from dotenv import load_dotenv
 from redteam_engine import RedTeamEngine
 from cyber_dna_engine import CyberDNAEngine
 from scan_logger import ScanLogger
+from fraud_recovery_assistant import FraudRecoveryAssistant
 
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BASE_DIR.parent
@@ -61,6 +62,7 @@ app.add_middleware(
 redteam_engine = RedTeamEngine()
 dna_engine = CyberDNAEngine()
 scan_logger = ScanLogger()
+recovery_assistant = FraudRecoveryAssistant()
 
 # Load models (absolute paths)
 TEXT_MODEL_PATH = BASE_DIR / "models" / "text_scam_model.pkl"
@@ -122,6 +124,23 @@ class EmailScanRequest(BaseModel):
     user_id: Optional[str] = None
     enable_redteam: bool = Field(True, description="Enable Red-Team analysis")
     enable_dna: bool = Field(True, description="Enable Cyber DNA fingerprinting")
+
+
+class RecoveryAnalysisRequest(BaseModel):
+    scan_id: Optional[str] = Field(None, description="Scan ID from previous detection")
+    threat_data: Dict[str, Any] = Field(..., description="Threat detection data")
+
+
+class RecoveryProgressRequest(BaseModel):
+    session_id: str = Field(..., description="Recovery session ID")
+    step_number: int = Field(..., description="Step number to update")
+    status: str = Field("completed", description="Status: completed, in_progress, or skipped")
+
+
+class RecoveryReportRequest(BaseModel):
+    session_id: str = Field(..., description="Recovery session ID")
+    recovery_plan: Dict[str, Any] = Field(..., description="Original recovery plan")
+    completed_steps: List[int] = Field(..., description="List of completed step numbers")
 
 
 # Helper functions
@@ -823,6 +842,109 @@ async def find_similar_by_hash(dna_hash: str, threshold: float = 0.7):
         "message": "Feature requires DNA database indexing",
         "dna_hash": dna_hash
     }
+
+
+@app.post("/recovery/analyze")
+async def analyze_for_recovery(request: RecoveryAnalysisRequest):
+    """
+    Analyze a detected threat and generate personalized recovery plan
+    
+    Takes threat detection data and generates:
+    - Step-by-step recovery plan
+    - Personalized AI-powered advice
+    - Resource contacts
+    - Progress tracker
+    """
+    try:
+        recovery_plan = await _run_blocking(
+            recovery_assistant.generate_recovery_plan,
+            request.threat_data
+        )
+        
+        return {
+            "success": True,
+            "recovery_plan": recovery_plan,
+            "message": "Recovery plan generated successfully"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to generate recovery plan: {str(e)}")
+
+
+@app.post("/recovery/track")
+async def track_recovery_progress(request: RecoveryProgressRequest):
+    """
+    Update progress on a recovery step
+    
+    Tracks which steps have been completed in the recovery process
+    """
+    try:
+        progress_update = await _run_blocking(
+            recovery_assistant.update_progress,
+            request.session_id,
+            request.step_number,
+            request.status
+        )
+        
+        return {
+            "success": True,
+            "progress": progress_update,
+            "message": f"Step {request.step_number} marked as {request.status}"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update progress: {str(e)}")
+
+
+@app.post("/recovery/report")
+async def generate_recovery_report(request: RecoveryReportRequest):
+    """
+    Generate formal report for authorities/institutions
+    
+    Creates a comprehensive report documenting:
+    - Incident details
+    - Actions taken
+    - Current status
+    - Resources contacted
+    """
+    try:
+        report = await _run_blocking(
+            recovery_assistant.generate_report,
+            request.recovery_plan,
+            request.completed_steps
+        )
+        
+        return {
+            "success": True,
+            "report": report,
+            "message": "Recovery report generated successfully"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to generate report: {str(e)}")
+
+
+@app.get("/recovery/guidance/{threat_type}")
+async def get_threat_guidance(threat_type: str):
+    """
+    Get general guidance for a specific threat type
+    
+    Returns:
+    - Recovery steps
+    - Prevention tips
+    - Relevant resources
+    
+    Supported threat types: phishing, scam, malware, identity, fraud
+    """
+    try:
+        guidance = await _run_blocking(
+            recovery_assistant.get_guidance_for_threat,
+            threat_type
+        )
+        
+        return {
+            "success": True,
+            "guidance": guidance
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get guidance: {str(e)}")
 
 
 def _generate_recommendation(scan_result: Dict, redteam_result: Optional[Dict]) -> str:
