@@ -46,6 +46,11 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     scopes = Column(String, default="")  # space-separated scopes
     created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # OTP verification fields
+    is_email_verified = Column(Boolean, default=False)
+    otp_code = Column(String, nullable=True)
+    otp_expiry = Column(DateTime, nullable=True)
 
     roles = relationship("Role", secondary=user_roles, back_populates="users", lazy="joined")
 
