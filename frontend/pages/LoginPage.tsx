@@ -28,7 +28,11 @@ const LoginPage: React.FC = () => {
       // Default redirect to New Scan page as per requirements
       navigate('/app/scan');
     } else {
-      if (result.status === 401) {
+      // Check if verification is required (status 403)
+      if (result.status === 403) {
+        // Redirect to OTP verification page
+        navigate('/verify-otp', { state: { email } });
+      } else if (result.status === 401) {
         setErrorMessage('Invalid email or password');
       } else {
         setErrorMessage('Login failed. Please try again.');

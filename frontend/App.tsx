@@ -6,6 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import RoleRoute from './components/RoleRoute';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
+import OTPVerificationPage from './pages/OTPVerificationPage';
 import DashboardPage from './pages/DashboardPage';
 import ScanPage from './pages/ScanPage';
 import HistoryPage from './pages/HistoryPage';
@@ -20,6 +21,7 @@ const App: React.FC = () => {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/verify-otp" element={<OTPVerificationPage />} />
         
         {/* Protected Routes */}
         <Route path="/app" element={<ProtectedRoute><Layout /></ProtectedRoute>}>

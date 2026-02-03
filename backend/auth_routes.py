@@ -6,8 +6,9 @@ storage for production.
 """
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import timedelta, datetime
 import os
+import secrets
 from typing import Callable, Iterable
 
 from flask import Blueprint, current_app, jsonify, request
@@ -22,6 +23,7 @@ from flask_jwt_extended import (
 )
 
 from auth_models import SessionLocal, User, Role, init_db
+from email_service import email_service
 from sqlalchemy import func
 
 jwt = JWTManager()
@@ -29,6 +31,15 @@ auth_bp = Blueprint("auth", __name__)
 
 # Simple in-memory blocklist; replace with Redis in production.
 TOKEN_BLOCKLIST = set()
+
+
+def generate_otp() -> str:
+    """Generate a 6-digit OTP code.
+    
+    Uses secrets module for cryptographic randomness.
+    Ensures all codes are exactly 6 digits (100000-999999).
+    """
+    return str(secrets.randbelow(900000) + 100000)
 
 
 def configure_jwt_callbacks(app) -> None:
@@ -90,7 +101,7 @@ def login():
         role_record = session.query(Role).filter_by(name=matched_role).one_or_none()
         user = session.query(User).filter(func.lower(User.email) == matched_email).one_or_none()
         if not user:
-            user = User(email=matched_email, scopes=" ".join(scopes), is_active=True)
+            user = User(email=matched_email, scopes=" ".join(scopes), is_active=True, is_email_verified=False)
             user.set_password(password)
             if role_record:
                 user.roles = [role_record]
@@ -105,6 +116,24 @@ def login():
                 user.roles = [role_record]
 
         session.commit()
+        
+        # Check if email is verified
+        if not user.is_email_verified:
+            # Generate and send OTP
+            otp_code = generate_otp()
+            user.otp_code = otp_code
+            user.otp_expiry = datetime.utcnow() + timedelta(minutes=10)
+            session.commit()
+            
+            # Send OTP email
+            email_sent = email_service.send_otp_email(matched_email, otp_code)
+            
+            return jsonify({
+                "msg": "Email verification required",
+                "requires_verification": True,
+                "email": matched_email,
+                "otp_sent": email_sent
+            }), 403
 
         access_token = create_access_token(identity=user.id, additional_claims=None)
         refresh_token = create_refresh_token(identity=user.id)
@@ -168,6 +197,97 @@ def me():
             "roles": claims.get("roles", []),
             "scopes": claims.get("scopes", []),
         })
+
+
+@auth_bp.post("/verify-otp")
+def verify_otp():
+    """Verify OTP code and complete email verification."""
+    data = request.get_json(force=True)
+    email = (data.get("email") or "").strip().lower()
+    otp_code = (data.get("otp_code") or "").strip()
+    
+    if not email or not otp_code:
+        return jsonify({"msg": "Email and OTP code are required"}), 400
+    
+    with SessionLocal() as session:
+        user = session.query(User).filter(func.lower(User.email) == email).one_or_none()
+        
+        if not user:
+            return jsonify({"msg": "User not found"}), 404
+        
+        if user.is_email_verified:
+            return jsonify({"msg": "Email already verified"}), 400
+        
+        if not user.otp_code or not user.otp_expiry:
+            return jsonify({"msg": "No OTP requested. Please login again."}), 400
+        
+        if datetime.utcnow() > user.otp_expiry:
+            return jsonify({"msg": "OTP expired. Please request a new one."}), 400
+        
+        if user.otp_code != otp_code:
+            return jsonify({"msg": "Invalid OTP code"}), 401
+        
+        # Mark email as verified and clear OTP
+        user.is_email_verified = True
+        user.otp_code = None
+        user.otp_expiry = None
+        session.commit()
+        
+        # Generate tokens for the verified user
+        access_token = create_access_token(identity=user.id, additional_claims=None)
+        refresh_token = create_refresh_token(identity=user.id)
+        
+        role_name = user.roles[0].name if user.roles else "user"
+        
+        resp = jsonify({
+            "msg": "Email verified successfully",
+            "token": access_token,
+            "role": role_name,
+            "email": user.email,
+        })
+        resp.set_cookie(
+            "refresh_token",
+            refresh_token,
+            httponly=True,
+            secure=current_app.config.get("JWT_COOKIE_SECURE", False),
+            samesite=current_app.config.get("JWT_COOKIE_SAMESITE", "Lax"),
+            path="/auth/refresh",
+            max_age=int(current_app.config["JWT_REFRESH_TOKEN_EXPIRES"].total_seconds()),
+        )
+        return resp
+
+
+@auth_bp.post("/resend-otp")
+def resend_otp():
+    """Resend OTP code to user's email."""
+    data = request.get_json(force=True)
+    email = (data.get("email") or "").strip().lower()
+    
+    if not email:
+        return jsonify({"msg": "Email is required"}), 400
+    
+    with SessionLocal() as session:
+        user = session.query(User).filter(func.lower(User.email) == email).one_or_none()
+        
+        if not user:
+            return jsonify({"msg": "User not found"}), 404
+        
+        if user.is_email_verified:
+            return jsonify({"msg": "Email already verified"}), 400
+        
+        # Generate new OTP
+        otp_code = generate_otp()
+        user.otp_code = otp_code
+        user.otp_expiry = datetime.utcnow() + timedelta(minutes=10)
+        session.commit()
+        
+        # Send OTP email
+        email_sent = email_service.send_otp_email(email, otp_code)
+        
+        return jsonify({
+            "msg": "OTP sent successfully" if email_sent else "Failed to send OTP",
+            "otp_sent": email_sent
+        }), 200 if email_sent else 500
 
 
 # Decorators for downstream services
