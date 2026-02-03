@@ -5,6 +5,11 @@ import time
 
 BASE_URL = "http://localhost:8000/auth"
 
+# Test constants
+TEST_ANALYST_EMAIL = "analyst@co.in"
+TEST_ANALYST_PASSWORD = "Sw@gtm!1"
+TEST_INVALID_OTP = "000000"
+
 
 def test_login_requires_verification():
     """Test that login returns verification required."""
@@ -15,8 +20,8 @@ def test_login_requires_verification():
     response = requests.post(
         f"{BASE_URL}/login",
         json={
-            "email": "analyst@co.in",
-            "password": "Sw@gtm!1"
+            "email": TEST_ANALYST_EMAIL,
+            "password": TEST_ANALYST_PASSWORD
         }
     )
     
@@ -70,7 +75,7 @@ def test_invalid_otp(email):
         f"{BASE_URL}/verify-otp",
         json={
             "email": email,
-            "otp_code": "000000"
+            "otp_code": TEST_INVALID_OTP
         }
     )
     

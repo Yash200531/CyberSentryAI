@@ -34,8 +34,12 @@ TOKEN_BLOCKLIST = set()
 
 
 def generate_otp() -> str:
-    """Generate a 6-digit OTP code."""
-    return str(secrets.randbelow(1000000)).zfill(6)
+    """Generate a 6-digit OTP code.
+    
+    Uses secrets module for cryptographic randomness.
+    Ensures all codes are exactly 6 digits (100000-999999).
+    """
+    return str(secrets.randbelow(900000) + 100000)
 
 
 def configure_jwt_callbacks(app) -> None:

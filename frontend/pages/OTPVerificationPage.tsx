@@ -3,6 +3,10 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Shield, Mail, RefreshCw } from 'lucide-react';
 import Logo from '../components/Logo';
 
+interface LocationState {
+  email?: string;
+}
+
 const OTPVerificationPage: React.FC = () => {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -12,7 +16,7 @@ const OTPVerificationPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  const email = (location.state as any)?.email || '';
+  const email = (location.state as LocationState)?.email || '';
 
   useEffect(() => {
     if (!email) {
