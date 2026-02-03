@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
-import { LayoutDashboard, Search, History, LogOut, Info, Users, Settings } from 'lucide-react';
+import { LayoutDashboard, Search, History, LogOut, Info, Users, Settings, ShieldAlert } from 'lucide-react';
 import Logo from './Logo';
 
 const Layout: React.FC = () => {
@@ -31,6 +31,7 @@ const Layout: React.FC = () => {
           <NavItem to="/app/dashboard" icon={<LayoutDashboard size={20} />} label="Command Center" />
           <NavItem to="/app/scan" icon={<Search size={20} />} label="New Scan" />
           <NavItem to="/app/history" icon={<History size={20} />} label="Scan History" />
+          <NavItem to="/app/recovery" icon={<ShieldAlert size={20} />} label="Recovery Assistant" />
           
           <div className="pt-4 mt-4 border-t border-cyber-border/50">
              <p className="px-4 text-xs font-mono text-gray-500 uppercase mb-2">System Info</p>
