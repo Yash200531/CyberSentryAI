@@ -4,7 +4,7 @@ import { getScans } from '../services/storage';
 import { exportToJSON, exportToCSV, exportToPDF } from '../services/exportService';
 import { ThreatLevel } from '../types';
 import CyberDNAChart from '../components/CyberDNAChart';
-import { AlertOctagon, CheckCircle, Fingerprint, BrainCircuit, Share2, ArrowLeft, Download, FileJson, FileText, FileSpreadsheet } from 'lucide-react';
+import { AlertOctagon, CheckCircle, Fingerprint, BrainCircuit, Share2, ArrowLeft, Download, FileJson, FileText, FileSpreadsheet, ShieldAlert } from 'lucide-react';
 
 const ReportPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -28,26 +28,56 @@ const ReportPage: React.FC = () => {
             <ArrowLeft size={16} className="mr-2" /> Back to History
         </button>
         
-        <div className="relative">
-            <button 
-                onClick={() => setShowExportMenu(!showExportMenu)}
-                className="flex items-center gap-2 px-4 py-2 bg-cyber-primary/10 text-cyber-primary border border-cyber-primary/30 rounded hover:bg-cyber-primary hover:text-black transition-all font-display font-bold text-sm"
-            >
-                <Download size={16} /> EXPORT INTEL
-            </button>
-            {showExportMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-cyber-panel border border-cyber-border rounded-lg shadow-xl z-50 overflow-hidden">
-                    <button onClick={() => exportToPDF(scan)} className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-white/10 flex items-center gap-2">
-                        <FileText size={16} className="text-red-400" /> PDF Report
-                    </button>
-                    <button onClick={() => exportToCSV(scan)} className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-white/10 flex items-center gap-2 border-t border-cyber-border/50">
-                        <FileSpreadsheet size={16} className="text-green-400" /> CSV Data
-                    </button>
-                    <button onClick={() => exportToJSON(scan)} className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-white/10 flex items-center gap-2 border-t border-cyber-border/50">
-                        <FileJson size={16} className="text-yellow-400" /> JSON (STIX)
-                    </button>
-                </div>
+        <div className="flex gap-3">
+            {/* Recovery Assistant Button - Show for threats */}
+            {!isSafe && (
+                <button 
+                    onClick={() => navigate('/app/recovery', { 
+                        state: { 
+                            threatData: {
+                                scan_id: scan.id,
+                                scan_type: scan.type,
+                                detection: {
+                                    is_threat: true,
+                                    confidence: scan.riskScore,
+                                    label: scan.threatLevel?.toLowerCase() || 'unknown'
+                                },
+                                redteam_analysis: {
+                                    attack_goal: scan.redTeamReport.attackGoal,
+                                    victim_profile: scan.redTeamReport.victimProfile,
+                                    psychological_tactics: scan.redTeamReport.tacticsUsed,
+                                    severity: Math.ceil(scan.riskScore / 10)
+                                }
+                            }
+                        } 
+                    })}
+                    className="flex items-center gap-2 px-4 py-2 bg-orange-500/10 text-orange-400 border border-orange-500/30 rounded hover:bg-orange-500 hover:text-white transition-all font-display font-bold text-sm"
+                >
+                    <ShieldAlert size={16} /> GET RECOVERY HELP
+                </button>
             )}
+            
+            <div className="relative">
+                <button 
+                    onClick={() => setShowExportMenu(!showExportMenu)}
+                    className="flex items-center gap-2 px-4 py-2 bg-cyber-primary/10 text-cyber-primary border border-cyber-primary/30 rounded hover:bg-cyber-primary hover:text-black transition-all font-display font-bold text-sm"
+                >
+                    <Download size={16} /> EXPORT INTEL
+                </button>
+                {showExportMenu && (
+                    <div className="absolute right-0 mt-2 w-48 bg-cyber-panel border border-cyber-border rounded-lg shadow-xl z-50 overflow-hidden">
+                        <button onClick={() => exportToPDF(scan)} className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-white/10 flex items-center gap-2">
+                            <FileText size={16} className="text-red-400" /> PDF Report
+                        </button>
+                        <button onClick={() => exportToCSV(scan)} className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-white/10 flex items-center gap-2 border-t border-cyber-border/50">
+                            <FileSpreadsheet size={16} className="text-green-400" /> CSV Data
+                        </button>
+                        <button onClick={() => exportToJSON(scan)} className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-white/10 flex items-center gap-2 border-t border-cyber-border/50">
+                            <FileJson size={16} className="text-yellow-400" /> JSON (STIX)
+                        </button>
+                    </div>
+                )}
+            </div>
         </div>
       </div>
 

@@ -14,6 +14,7 @@ import ReportPage from './pages/ReportPage';
 import ProfilePage from './pages/ProfilePage';
 import AboutPage from './pages/AboutPage';
 import InfoPage from './pages/InfoPage';
+import FraudRecoveryPage from './pages/FraudRecoveryPage';
 
 const App: React.FC = () => {
   return (
@@ -30,6 +31,7 @@ const App: React.FC = () => {
           <Route path="scan" element={<ScanPage />} />
           <Route path="history" element={<HistoryPage />} />
           <Route path="report/:id" element={<ReportPage />} />
+          <Route path="recovery" element={<FraudRecoveryPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="about" element={<AboutPage />} />
           <Route path="info" element={<InfoPage />} />
